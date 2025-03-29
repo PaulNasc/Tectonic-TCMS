@@ -1,0 +1,253 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme="dark"] {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Cores Base */
+  --bg-primary: #0a0b0e;
+  --bg-secondary: #12141a;
+  --bg-tertiary: #1a1d25;
+  
+  /* Cores de Destaque */
+  --neon-primary: #00ffb3;
+  --neon-secondary: #00e6a1;
+  --neon-tertiary: #00cc8f;
+  
+  /* Cores de Status */
+  --success-bg: rgba(0, 255, 179, 0.1);
+  --success-text: #00ffb3;
+  --error-bg: rgba(255, 71, 87, 0.1);
+  --error-text: #ff4757;
+  --warning-bg: rgba(255, 187, 40, 0.1);
+  --warning-text: #ffbb28;
+  --info-bg: rgba(83, 166, 250, 0.1);
+  --info-text: #53a6fa;
+  
+  /* Cores de Texto */
+  --text-primary: #ffffff;
+  --text-secondary: #8b8d93;
+  
+  /* Cores de Fundo dos Componentes */
+  --card-bg: #12141a;
+  --drawer-bg: #12141a;
+  --drawer-header-bg: #12141a;
+  --appbar-bg: #12141a;
+  
+  /* Estados e Interações */
+  --hover-bg: rgba(255, 255, 255, 0.05);
+  --active-bg: rgba(0, 255, 179, 0.1);
+  --border-color: rgba(255, 255, 255, 0.1);
+  
+  /* Sombras */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="light"] {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Cores Base */
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f0f0;
+  
+  /* Cores de Destaque */
+  --neon-primary: #1976d2;
+  --neon-secondary: #1565c0;
+  --neon-tertiary: #0d47a1;
+  
+  /* Cores de Status */
+  --success-bg: rgba(76, 175, 80, 0.1);
+  --success-text: #2e7d32;
+  --error-bg: rgba(244, 67, 54, 0.1);
+  --error-text: #d32f2f;
+  --warning-bg: rgba(255, 152, 0, 0.1);
+  --warning-text: #ed6c02;
+  --info-bg: rgba(33, 150, 243, 0.1);
+  --info-text: #0288d1;
+  
+  /* Cores de Texto */
+  --text-primary: rgba(0, 0, 0, 0.87);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  
+  /* Cores de Fundo dos Componentes */
+  --card-bg: #ffffff;
+  --drawer-bg: #ffffff;
+  --drawer-header-bg: #ffffff;
+  --appbar-bg: #ffffff;
+  
+  /* Estados e Interações */
+  --hover-bg: rgba(0, 0, 0, 0.04);
+  --active-bg: rgba(25, 118, 210, 0.1);
+  --border-color: rgba(0, 0, 0, 0.12);
+  
+  /* Sombras */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Bordas */
+:root {
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+
+a {
+  color: var(--neon-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--neon-secondary);
+}
+
+button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Estilização do Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Animações */
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 5px var(--neon-primary);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--neon-primary);
+  }
+  100% {
+    box-shadow: 0 0 5px var(--neon-primary);
+  }
+}
+
+/* Classes de Utilidade */
+.glow {
+  animation: glow 2s infinite;
+}
+
+.text-glow {
+  text-shadow: 0 0 8px var(--neon-primary);
+}
+
+/* Estilos para Inputs */
+input, textarea, select {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--neon-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--success-bg);
+}
+
+/* Estilos para Cards */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--neon-primary);
+  box-shadow: var(--shadow-md);
+}
+
+/* Estilos para Tabelas */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+th, td {
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+tr:hover {
+  background-color: var(--hover-bg);
+}
+
+/* Estilos para Chips */
+.chip {
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Estilos para Tooltips */
+.tooltip {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+} 
