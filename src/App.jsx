@@ -8,9 +8,6 @@ import { Snackbar, Alert, CircularProgress, Box } from '@mui/material'
 import * as userService from './services/userService'
 import './styles/global.css'
 import OnboardingTour from './components/OnboardingTour'
-import { LocalizationProvider } from '@mui/x-date-pickers'
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
-import { ptBR } from 'date-fns/locale'
 
 // Temas do sistema
 import { lightTheme, darkTheme } from './theme'
@@ -64,12 +61,10 @@ function App() {
       <CssBaseline enableColorScheme />
       <AuthProvider>
         <SystemInitializer />
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
-          <Router>
-            <OnboardingTour />
-            <AppRoutes toggleTheme={toggleTheme} />
-          </Router>
-        </LocalizationProvider>
+        <Router>
+          <OnboardingTour />
+          <AppRoutes toggleTheme={toggleTheme} />
+        </Router>
       </AuthProvider>
     </ThemeProvider>
   )

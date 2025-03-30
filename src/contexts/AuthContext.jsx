@@ -302,4 +302,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// Garantir que o contexto seja exportado como default para compatibilidade
 export default AuthContext; 
