@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router } from 'react-router-dom'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { CssBaseline, useMediaQuery } from '@mui/material'
 import AppRoutes from './routes'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { Snackbar, Alert, CircularProgress, Box } from '@mui/material'
 import * as userService from './services/userService'
+import './styles/global.css'
+import OnboardingTour from './components/OnboardingTour'
+
+// Temas do sistema
+import { lightTheme, darkTheme } from './theme'
 
 // Componente para inicialização do sistema
 const SystemInitializer = ({ children }) => {
@@ -18,6 +24,14 @@ const SystemInitializer = ({ children }) => {
       try {
         // Verificar se o sistema foi inicializado
         console.log('Verificando inicialização do sistema...')
+        
+        // Debugar informações do usuário
+        console.log('Usuário autenticado:', user ? {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          isAdmin: user.role === 'admin' || user.email === 'admin@hybex'
+        } : 'Nenhum usuário autenticado')
         
         // Garantir que o usuário admin@hybex esteja configurado como administrador
         if (user) {
@@ -95,24 +109,38 @@ const SystemInitializer = ({ children }) => {
 
 // Componente principal com os providers
 function App() {
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
+  const [mode, setMode] = useState(() => {
+    const savedMode = localStorage.getItem('themeMode')
+    return savedMode || (prefersDarkMode ? 'dark' : 'light')
+  })
+
+  useEffect(() => {
+    localStorage.setItem('themeMode', mode)
+    document.documentElement.setAttribute('data-theme', mode)
+  }, [mode])
+
+  const toggleTheme = () => {
+    setMode(prevMode => prevMode === 'light' ? 'dark' : 'light')
+  }
+
+  const theme = React.useMemo(() => {
+    return mode === 'dark' ? darkTheme : lightTheme
+  }, [mode])
+
   return (
-    <ThemeProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline enableColorScheme />
       <AuthProvider>
-        <Router>
-          <SystemInitializer>
-            <AppComponent />
-          </SystemInitializer>
-        </Router>
+        <SystemInitializer>
+          <Router>
+            <OnboardingTour />
+            <AppRoutes toggleTheme={toggleTheme} />
+          </Router>
+        </SystemInitializer>
       </AuthProvider>
     </ThemeProvider>
   )
-}
-
-// Componente que usa os hooks dentro dos providers
-function AppComponent() {
-  const { toggleThemeMode } = useTheme()
-  
-  return <AppRoutes toggleTheme={toggleThemeMode} />
 }
 
 export default App 

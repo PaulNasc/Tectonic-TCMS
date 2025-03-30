@@ -289,7 +289,7 @@ const Login = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Logo src="/src/assets/logo-hybex.svg" alt="Hybex Logo" />
             <Typography variant="h5" sx={{ color: '#ffffff', mb: 1 }}>
-              Bem-vindo ao CRM QA Test
+              Bem-vindo ao Tectonic TCMS
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 4 }}>
               Entre com suas credenciais para continuar

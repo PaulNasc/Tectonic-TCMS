@@ -371,23 +371,50 @@ export const testSuiteService = {
       console.log(`Registrando execução para suíte ${suiteId}:`, executionData);
       
       // Obter a suíte atual
-      const suite = await this.getTestSuite(suiteId);
+      const { data: suite, error: suiteError } = await this.getTestSuiteById(suiteId);
+      if (suiteError) {
+        throw new Error('Suite não encontrada: ' + suiteError);
+      }
+      
+      if (!suite) {
+        throw new Error('Suite não encontrada');
+      }
+      
+      // Mapear os resultados para garantir compatibilidade com o status
+      const mappedResults = (executionData.testResults || []).map(result => {
+        // Corrigir o status do resultado para o formato esperado
+        let status = 'skipped';
+        if (result.status === 'Passou' || result.status === 'passed') status = 'passed';
+        else if (result.status === 'Falhou' || result.status === 'failed') status = 'failed';
+        else if (result.status === 'Bloqueado' || result.status === 'blocked') status = 'blocked';
+        
+        return {
+          ...result,
+          status
+        };
+      });
+      
+      // Calcular resumo da execução
+      const summary = {
+        total: mappedResults.length,
+        passed: mappedResults.filter(t => t.status === 'passed').length,
+        failed: mappedResults.filter(t => t.status === 'failed').length,
+        blocked: mappedResults.filter(t => t.status === 'blocked').length,
+        skipped: mappedResults.filter(t => t.status === 'skipped').length
+      };
       
       // Criar um registro de execução
       const execution = {
         suiteId,
         executedAt: serverTimestamp(),
         executedBy: executionData.executedBy,
-        environment: executionData.environment,
-        testResults: executionData.testResults || [],
+        environment: executionData.environment || 'Não especificado',
+        notes: executionData.notes || '',
+        testResults: mappedResults,
         status: executionData.status || 'completed',
-        summary: {
-          total: executionData.testResults.length,
-          passed: executionData.testResults.filter(t => t.status === 'passed').length,
-          failed: executionData.testResults.filter(t => t.status === 'failed').length,
-          blocked: executionData.testResults.filter(t => t.status === 'blocked').length,
-          skipped: executionData.testResults.filter(t => t.status === 'skipped').length
-        }
+        summary: summary,
+        passed: summary.passed,
+        total: mappedResults.length
       };
       
       // Adicionar à coleção de execuções
@@ -403,25 +430,66 @@ export const testSuiteService = {
       };
       
       // Atualizar estatísticas
-      stats.totalExecutions++;
+      stats.totalExecutions = (stats.totalExecutions || 0) + 1;
       stats.lastExecution = Timestamp.now();
-      stats.passRate = (stats.passRate * (stats.totalExecutions - 1) + 
-        (execution.summary.passed / execution.summary.total) * 100) / stats.totalExecutions;
+      stats.lastExecutionDate = new Date();
       
-      // Atualizar ambiente
-      if (!stats.environments[execution.environment]) {
-        stats.environments[execution.environment] = 0;
+      // Evitar divisão por zero
+      if (execution.summary.total > 0) {
+        stats.passRate = (stats.passRate * (stats.totalExecutions - 1) + 
+          (execution.summary.passed / execution.summary.total * 100)) / stats.totalExecutions;
       }
-      stats.environments[execution.environment]++;
       
-      // Atualizar suíte com nova execução e estatísticas
+      // Atualizar ambiente com verificação de segurança
+      const env = execution.environment || 'Não especificado';
+      if (!stats.environments) {
+        stats.environments = {};
+      }
+      
+      if (!stats.environments[env]) {
+        stats.environments[env] = 0;
+      }
+      stats.environments[env]++;
+      
+      // Verificar se executions já existe na suite, se não, criar um array vazio
+      const currentExecutions = Array.isArray(suite.executions) ? suite.executions : [];
+      
+      // Certificar que estamos usando o executionId, não o objeto de execução completo
+      if (!currentExecutions.includes(executionId)) {
+        // Atualizar suíte com nova execução e estatísticas
+        await updateDoc(doc(db, 'testSuites', suiteId), {
+          updatedAt: serverTimestamp(),
+          statistics: stats,
+          executions: arrayUnion(executionId)
+        });
+        
+        console.log(`Suite atualizada com nova execução: ${executionId}`);
+      }
+      
+      // Atualizar também os casos de teste com os resultados
+      const testCases = [...(suite.testCases || [])];
+      for (const result of mappedResults) {
+        const testCaseIndex = testCases.findIndex(tc => tc.id === result.testId);
+        if (testCaseIndex >= 0) {
+          testCases[testCaseIndex] = {
+            ...testCases[testCaseIndex],
+            lastExecution: {
+              status: result.status,
+              executedAt: new Date(),
+              notes: result.notes || ''
+            },
+            updatedAt: new Date()
+          };
+        }
+      }
+      
+      // Atualizar os casos de teste
       await updateDoc(doc(db, 'testSuites', suiteId), {
-        updatedAt: serverTimestamp(),
-        statistics: stats,
-        executions: arrayUnion(executionId)
+        testCases: testCases,
+        updatedAt: serverTimestamp()
       });
       
-      // Obter execução com ID
+      // Obter execução com ID para retornar
       const result = {
         id: executionId,
         ...execution,
@@ -429,10 +497,10 @@ export const testSuiteService = {
       };
       
       console.log(`Execução registrada com sucesso:`, result);
-      return result;
+      return { data: result, error: null };
     } catch (error) {
       console.error('Erro ao registrar execução da suíte de teste:', error);
-      throw error;
+      return { data: null, error: error.message };
     }
   },
 
@@ -524,29 +592,37 @@ export const testSuiteService = {
       console.log(`Removendo caso de teste ${testCaseId} da suíte ${suiteId}`);
       
       // Obter a suíte atual
-      const suite = await this.getTestSuite(suiteId);
+      const suiteRef = doc(db, 'testSuites', suiteId);
+      const suiteSnap = await getDoc(suiteRef);
+      
+      if (!suiteSnap.exists()) {
+        throw new Error('Suite de teste não encontrada');
+      }
+      
+      const suiteData = suiteSnap.data();
+      const testCases = suiteData.testCases || [];
       
       // Filtrar o caso de teste a ser removido
-      const updatedTestCases = suite.testCases.filter(tc => tc.id !== testCaseId);
+      const updatedTestCases = testCases.filter(tc => tc.id !== testCaseId);
       
-      if (updatedTestCases.length === suite.testCases.length) {
+      if (updatedTestCases.length === testCases.length) {
         throw new Error('Caso de teste não encontrado');
       }
       
       // Atualizar a suíte
-      await updateDoc(doc(db, 'testSuites', suiteId), {
+      await updateDoc(suiteRef, {
         testCases: updatedTestCases,
         updatedAt: serverTimestamp()
       });
       
       // Obter suíte atualizada
-      const updatedSuite = await this.getTestSuite(suiteId);
-      console.log(`Caso de teste removido com sucesso:`, updatedSuite);
+      const { data } = await this.getTestSuiteById(suiteId);
+      console.log(`Caso de teste removido com sucesso:`, data);
       
-      return updatedSuite;
+      return { data, error: null };
     } catch (error) {
       console.error('Erro ao remover caso de teste:', error);
-      throw error;
+      return { data: null, error: error.message };
     }
   },
 
@@ -608,6 +684,121 @@ export const testSuiteService = {
     } catch (error) {
       console.error('Erro ao excluir suíte de teste:', error);
       return { data: null, error: error.message };
+    }
+  },
+
+  async deleteExecution(suiteId, executionId) {
+    try {
+      console.log(`Excluindo execução ${executionId} da suíte ${suiteId}`);
+      
+      // Verificar se a suíte existe
+      const suiteRef = doc(db, 'testSuites', suiteId);
+      const suiteDoc = await getDoc(suiteRef);
+      
+      if (!suiteDoc.exists()) {
+        throw new Error('Suíte de teste não encontrada');
+      }
+      
+      // Verificar se a execução existe
+      const executionRef = doc(db, 'testExecutions', executionId);
+      const executionDoc = await getDoc(executionRef);
+      
+      if (!executionDoc.exists()) {
+        throw new Error('Execução não encontrada');
+      }
+      
+      // Remover a execução da lista na suíte
+      const suiteData = suiteDoc.data();
+      
+      // Verificar se executions é um array válido antes de filtrar
+      const executions = Array.isArray(suiteData.executions) ? suiteData.executions : [];
+      
+      // Verificar se o ID existe na lista
+      if (executions.indexOf(executionId) === -1) {
+        console.log(`Aviso: Execução ${executionId} não encontrada na lista de execuções da suite ${suiteId}`);
+      }
+      
+      const updatedExecutions = executions.filter(id => id !== executionId);
+      
+      // Atualizar estatísticas da suíte
+      const statistics = suiteData.statistics || {};
+      statistics.totalExecutions = Math.max(0, (statistics.totalExecutions || 0) - 1);
+      
+      // Se foi a última execução, limpar a data da última execução
+      if (executions.length === 1 && executions[0] === executionId) {
+        statistics.lastExecution = null;
+      }
+      
+      // Atualizar a suíte
+      await updateDoc(suiteRef, {
+        executions: updatedExecutions,
+        statistics: statistics,
+        updatedAt: serverTimestamp()
+      });
+      
+      // Excluir o documento da execução
+      await deleteDoc(executionRef);
+      
+      console.log(`Execução ${executionId} excluída com sucesso`);
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao excluir execução:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Novo método compatível com a nova interface
+  async createTestCase(suiteId, testCaseData) {
+    try {
+      console.log(`Criando caso de teste na suíte ${suiteId}:`, testCaseData);
+      const suiteRef = doc(db, 'testSuites', suiteId);
+      
+      // Validar dados do caso de teste
+      if (!testCaseData.name) {
+        throw new Error('O nome do caso de teste é obrigatório');
+      }
+      
+      // Preparar caso de teste com campos padrão
+      const newTestCase = {
+        id: Math.random().toString(36).substring(2, 15),
+        title: testCaseData.name,
+        description: testCaseData.description || '',
+        steps: testCaseData.steps || [],
+        expectedResults: testCaseData.expectedResults || '',
+        prerequisites: testCaseData.prerequisites || [],
+        priority: testCaseData.priority || 'medium',
+        status: testCaseData.status || 'active',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      
+      // Obter a suíte atual
+      const suiteSnap = await getDoc(suiteRef);
+      
+      if (!suiteSnap.exists()) {
+        throw new Error('Suite não encontrada');
+      }
+      
+      const suiteData = suiteSnap.data();
+      const testCases = suiteData.testCases || [];
+      
+      // Adicionar o novo caso de teste
+      const updatedTestCases = [...testCases, newTestCase];
+      
+      // Atualizar suíte com novo caso de teste
+      await updateDoc(suiteRef, {
+        testCases: updatedTestCases,
+        updatedAt: serverTimestamp()
+      });
+      
+      // Obter suíte atualizada
+      const { data } = await this.getTestSuiteById(suiteId);
+      console.log(`Caso de teste criado com sucesso na suíte:`, data);
+      
+      return { data };
+    } catch (error) {
+      console.error('Erro ao criar caso de teste:', error);
+      return { error: error.message };
     }
   },
 };

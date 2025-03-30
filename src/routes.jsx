@@ -32,7 +32,7 @@ const PrivateRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return children;
+  return typeof children === 'function' ? children({ user }) : children;
 };
 
 const AppRoutes = ({ toggleTheme }) => {
@@ -70,7 +70,12 @@ const AppRoutes = ({ toggleTheme }) => {
         {/* Rota de Admin */}
         <Route path="admin" element={
           <PrivateRoute>
-            <AdminPage />
+            {({ user }) => {
+              if (user?.role === 'admin' || user?.email === 'admin@hybex') {
+                return <AdminPage />;
+              }
+              return <Navigate to="/" replace />;
+            }}
           </PrivateRoute>
         } />
         

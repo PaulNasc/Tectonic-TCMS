@@ -53,7 +53,8 @@ export const AuthProvider = ({ children }) => {
           }
           
           // Verificar se é o usuário admin@hybex e garantir que seja administrador
-          if (firebaseUser.email === 'admin@hybex') {
+          const isAdminEmail = firebaseUser.email === 'admin@hybex';
+          if (isAdminEmail) {
             console.log('Usuário admin@hybex detectado');
             if (userData.role !== 'admin') {
               console.log('Atualizando usuário para admin');
@@ -62,18 +63,31 @@ export const AuthProvider = ({ children }) => {
             }
           }
           
-          setUser({
+          const userObj = {
             id: firebaseUser.uid,
             email: firebaseUser.email,
             ...userData
-          });
+          };
+          
+          // Força a função de admin para o email admin@hybex
+          if (isAdminEmail) {
+            userObj.role = 'admin';
+          }
+          
+          console.log('Definindo dados do usuário:', userObj);
+          setUser(userObj);
         } catch (error) {
           console.error('Erro ao carregar dados do usuário:', error);
-          setUser({
+          
+          // Mesmo com erro, definir usuário base
+          const userObj = {
             id: firebaseUser.uid,
             email: firebaseUser.email,
-            role: 'user'
-          });
+            role: firebaseUser.email === 'admin@hybex' ? 'admin' : 'user'
+          };
+          
+          console.log('Definindo dados básicos do usuário após erro:', userObj);
+          setUser(userObj);
         }
       } else {
         setUser(null);

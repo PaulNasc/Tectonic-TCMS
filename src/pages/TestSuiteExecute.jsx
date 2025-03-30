@@ -143,6 +143,33 @@ const TestSuiteExecute = () => {
         throw new Error(`Existem ${pendingTests.length} testes pendentes de execução`);
       }
       
+      // Mapear os resultados dos testes para o formato esperado pelo serviço
+      const mappedResults = Object.entries(executions).map(([testId, execution]) => {
+        // Mapear os status do frontend para os status esperados pelo backend
+        const statusMap = {
+          'Passou': 'passed',
+          'Falhou': 'failed',
+          'Bloqueado': 'blocked',
+          'Pendente': 'skipped'
+        };
+        
+        return {
+          testId,
+          status: statusMap[execution.status] || 'skipped',
+          notes: execution.notes || '',
+          evidence: execution.evidence || ''
+        };
+      });
+      
+      // Contar resultados para resumo
+      const summary = {
+        total: mappedResults.length,
+        passed: mappedResults.filter(r => r.status === 'passed').length,
+        failed: mappedResults.filter(r => r.status === 'failed').length,
+        blocked: mappedResults.filter(r => r.status === 'blocked').length,
+        skipped: mappedResults.filter(r => r.status === 'skipped').length
+      };
+      
       // Montar o resultado da execução
       const executionResult = {
         suiteId,
@@ -155,26 +182,37 @@ const TestSuiteExecute = () => {
           email: user.email
         },
         executedAt: new Date(),
-        testResults: Object.entries(executions).map(([testId, execution]) => ({
-          testId,
-          status: execution.status,
-          notes: execution.notes,
-          evidence: execution.evidence
-        }))
+        testResults: mappedResults,
+        status: 'completed',
+        summary: summary,
+        passed: summary.passed,
+        total: summary.total
       };
       
       console.log('Finalizando execução:', executionResult);
       
-      // Aqui seria chamado o serviço para salvar a execução
-      // const { data, error } = await testExecutionService.createExecution(executionResult);
+      // Chamar o serviço para salvar a execução
+      const { data, error: execError } = await testSuiteService.executeSuite(suiteId, executionResult);
       
-      // Temporariamente, apenas navegar de volta
-      setTimeout(() => {
-        navigate(`/projects/${projectId}/suites/${suiteId}`);
-      }, 1500);
+      if (execError) {
+        throw new Error(execError);
+      }
+      
+      console.log('Execução finalizada com sucesso!', data);
+      
+      // Atualizar a suite com a nova execução
+      const { data: updatedSuite } = await testSuiteService.getTestSuiteById(suiteId);
+      setSuite(updatedSuite);
+      
+      // Mostrar mensagem de sucesso
+      setError(null);
+      
+      // Redirecionar para a página da suite
+      navigate(`/projects/${projectId}/suites/${suiteId}`);
+      
     } catch (err) {
       console.error('Erro ao finalizar execução:', err);
-      setError(err.message);
+      setError(err.message || 'Erro ao finalizar execução');
     } finally {
       setExecuting(false);
     }
@@ -229,13 +267,23 @@ const TestSuiteExecute = () => {
         <Typography variant="h4" component="h1">
           Executar Suite: {suite?.name}
         </Typography>
-        <Button 
-          variant="outlined" 
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(`/projects/${projectId}/suites/${suiteId}`)}
-        >
-          Cancelar
-        </Button>
+        <Box>
+          <Button 
+            variant="outlined" 
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate(`/projects/${projectId}/suites/${suiteId}`)}
+            sx={{ mr: 1 }}
+          >
+            Ver Suite
+          </Button>
+          <Button 
+            variant="outlined" 
+            color="secondary"
+            onClick={() => navigate(`/projects/${projectId}`)}
+          >
+            Cancelar
+          </Button>
+        </Box>
       </Box>
 
       {error && (
@@ -457,8 +505,19 @@ const TestSuiteExecute = () => {
               fullWidth
               disabled={!allTestsExecuted || executing || !environment}
               onClick={handleFinishExecution}
+              size="large"
+              sx={{ mb: 2 }}
             >
               {executing ? <CircularProgress size={24} /> : 'Finalizar Execução'}
+            </Button>
+            
+            <Button
+              variant="outlined"
+              color="secondary"
+              fullWidth
+              onClick={() => navigate(`/projects/${projectId}/suites/${suiteId}`)}
+            >
+              Ver Suite
             </Button>
             
             {!allTestsExecuted && (

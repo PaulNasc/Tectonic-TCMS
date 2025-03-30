@@ -135,7 +135,7 @@ const StyledListItem = styled(ListItem)`
 const Layout = ({ toggleTheme }) => {
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
-  const { currentUser, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -169,7 +169,10 @@ const Layout = ({ toggleTheme }) => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Projetos', icon: <ProjectsIcon />, path: '/projects' },
     { text: 'Relatórios', icon: <ReportsIcon />, path: '/reports' },
-    { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' }
+    { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
+    ...(user?.role === 'admin' || user?.email === 'admin@hybex' ? [
+      { text: 'Gerenciar', icon: <AdminPanelSettingsIcon />, path: '/admin' }
+    ] : [])
   ];
 
   return (
@@ -186,7 +189,7 @@ const Layout = ({ toggleTheme }) => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            CRM QA Test
+            Tectonic TCMS
           </Typography>
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">
                 {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
@@ -197,8 +200,8 @@ const Layout = ({ toggleTheme }) => {
               sx={{ ml: 2 }}
               >
                 <Avatar 
-                alt={currentUser?.name || 'User'}
-                src={currentUser?.photoURL}
+                alt={user?.name || 'User'}
+                src={user?.photoURL}
                 sx={{ width: 32, height: 32 }}
               />
               </IconButton>
@@ -224,6 +227,12 @@ const Layout = ({ toggleTheme }) => {
             <ChevronLeftIcon />
           </IconButton>
         </DrawerHeader>
+        <Divider />
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+          <Typography variant="h6" component="div" fontWeight="bold">
+            Tectonic TCMS
+          </Typography>
+        </Box>
         <Divider />
         <List>
           {menuItems.map((item) => (
@@ -268,7 +277,7 @@ const Layout = ({ toggleTheme }) => {
           <Typography>Configurações</Typography>
         </MenuItem>
 
-        {currentUser?.role === 'admin' && (
+        {(user?.role === 'admin' || user?.email === 'admin@hybex') && (
           <MenuItem onClick={() => {
             navigate('/admin');
             handleClose();
@@ -276,7 +285,7 @@ const Layout = ({ toggleTheme }) => {
             <ListItemIcon>
               <AdminPanelSettingsIcon fontSize="small" />
             </ListItemIcon>
-            <Typography>Administração</Typography>
+            <Typography>Gerenciar</Typography>
           </MenuItem>
         )}
 

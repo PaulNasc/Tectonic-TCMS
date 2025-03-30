@@ -43,6 +43,28 @@ import {
 import { projectService } from '../services/projectService';
 import { testSuiteService } from '../services/testSuiteService';
 import { useAuth } from '../contexts/AuthContext';
+import RequirementsTraceabilityMatrix from '../components/test/RequirementsTraceabilityMatrix';
+import TestPermissionManager from '../components/test/TestPermissionManager';
+
+const TabPanel = (props) => {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+};
 
 const ProjectView = () => {
   const { id } = useParams();
@@ -57,6 +79,7 @@ const ProjectView = () => {
   const [newSuite, setNewSuite] = useState({ name: '', description: '' });
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedSuite, setSelectedSuite] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -183,6 +206,17 @@ const ProjectView = () => {
     }
   };
 
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const a11yProps = (index) => {
+    return {
+      id: `simple-tab-${index}`,
+      'aria-controls': `simple-tabpanel-${index}`,
+    };
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -284,112 +318,112 @@ const ProjectView = () => {
 
           {/* Tabs de Navegação */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-              <Tab label="Suítes de Teste" />
-              <Tab label="Execuções" />
-              <Tab label="Relatórios" />
+            <Tabs value={tabValue} onChange={handleTabChange} aria-label="project tabs" variant="scrollable" scrollButtons="auto">
+              <Tab label="Suítes de Teste" {...a11yProps(0)} />
+              <Tab label="Matriz de Rastreabilidade" {...a11yProps(1)} />
+              <Tab label="Permissões" {...a11yProps(2)} />
+              <Tab label="Estatísticas" {...a11yProps(3)} />
             </Tabs>
           </Box>
 
           {/* Conteúdo das Tabs */}
           <Box>
-            {activeTab === 0 && (
-              <>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                  <Typography variant="h6">Suítes de Teste</Typography>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => setCreateSuiteDialog(true)}
-                  >
-                    Nova Suíte
-                  </Button>
-                </Box>
+            <TabPanel value={tabValue} index={0}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                <Typography variant="h6">Suítes de Teste</Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setCreateSuiteDialog(true)}
+                >
+                  Nova Suíte
+                </Button>
+              </Box>
 
-                <Grid container spacing={3}>
-                  {suites.map((suite) => (
-                    <Grid item xs={12} sm={6} md={4} key={suite.id}>
-                      <Card 
-                        sx={{ 
-                          height: '100%',
-                          cursor: 'pointer',
-                          '&:hover': {
-                            boxShadow: (theme) => theme.shadows[4]
-                          }
-                        }}
-                        onClick={() => navigate(`/projects/${id}/suites/${suite.id}`)}
-                      >
-                        <CardContent>
-                          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                            <Typography variant="h6" gutterBottom>
-                              {suite.name}
-                            </Typography>
-                            <IconButton
-                              size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSuiteMenu(e, suite);
-                              }}
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
-                          </Box>
-
-                          <Typography variant="body2" color="text.secondary" paragraph>
-                            {suite.description}
+              <Grid container spacing={3}>
+                {suites.map((suite) => (
+                  <Grid item xs={12} sm={6} md={4} key={suite.id}>
+                    <Card 
+                      sx={{ 
+                        height: '100%',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          boxShadow: (theme) => theme.shadows[4]
+                        }
+                      }}
+                      onClick={() => navigate(`/projects/${id}/suites/${suite.id}`)}
+                    >
+                      <CardContent>
+                        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                          <Typography variant="h6" gutterBottom>
+                            {suite.name}
                           </Typography>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSuiteMenu(e, suite);
+                            }}
+                          >
+                            <MoreVertIcon />
+                          </IconButton>
+                        </Box>
 
-                          <Box display="flex" gap={1} mb={2}>
-                            <Chip
-                              size="small"
-                              label={`${suite.testCases?.length || 0} testes`}
-                              variant="outlined"
-                            />
-                            <Chip
-                              size="small"
-                              label={`${suite.statistics?.passRate?.toFixed(0) || 0}% passou`}
-                              color={suite.statistics?.passRate > 80 ? 'success' : 'warning'}
-                              variant="outlined"
-                            />
-                          </Box>
+                        <Typography variant="body2" color="text.secondary" paragraph>
+                          {suite.description}
+                        </Typography>
 
-                          <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Typography variant="caption" color="text.secondary">
-                              Última execução: {suite.statistics?.lastExecution 
-                                ? new Date(suite.statistics.lastExecution).toLocaleDateString()
-                                : 'Nunca executado'
-                              }
-                            </Typography>
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/projects/${id}/suites/${suite.id}/execute`);
-                              }}
-                            >
-                              <PlayArrowIcon />
-                            </IconButton>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </>
-            )}
+                        <Box display="flex" gap={1} mb={2}>
+                          <Chip
+                            size="small"
+                            label={`${suite.testCases?.length || 0} testes`}
+                            variant="outlined"
+                          />
+                          <Chip
+                            size="small"
+                            label={`${suite.statistics?.passRate?.toFixed(0) || 0}% passou`}
+                            color={suite.statistics?.passRate > 80 ? 'success' : 'warning'}
+                            variant="outlined"
+                          />
+                        </Box>
 
-            {activeTab === 1 && (
-              <Typography variant="body1">
-                Histórico de execuções em desenvolvimento...
-              </Typography>
-            )}
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                          <Typography variant="caption" color="text.secondary">
+                            Última execução: {suite.statistics?.lastExecution 
+                              ? new Date(suite.statistics.lastExecution).toLocaleDateString()
+                              : 'Nunca executado'
+                            }
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/projects/${id}/suites/${suite.id}/execute`);
+                            }}
+                          >
+                            <PlayArrowIcon />
+                          </IconButton>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </TabPanel>
 
-            {activeTab === 2 && (
-              <Typography variant="body1">
-                Relatórios em desenvolvimento...
-              </Typography>
-            )}
+            <TabPanel value={tabValue} index={1}>
+              <RequirementsTraceabilityMatrix projectId={id} />
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={2}>
+              <TestPermissionManager projectId={id} />
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={3}>
+              {/* Estatísticas do projeto */}
+              {/* ... */}
+            </TabPanel>
           </Box>
 
           {/* Menu de Contexto da Suíte */}
