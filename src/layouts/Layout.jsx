@@ -163,6 +163,12 @@ const Layout = ({ toggleTheme }) => {
   const location = useLocation();
   const theme = useTheme();
 
+  console.log('Layout renderizado, usuário atual:', user);
+  console.log('Email do usuário:', user?.email);
+  console.log('Função do usuário:', user?.role);
+  console.log('É admin@hybex?', user?.email === 'admin@hybex');
+  console.log('Tem role admin?', user?.role === 'admin');
+
   const handleDrawerOpen = () => {
     setOpen(true);
   };
@@ -197,6 +203,8 @@ const Layout = ({ toggleTheme }) => {
       { text: 'Gerenciar', icon: <AdminPanelSettingsIcon />, path: '/admin' }
     ] : [])
   ];
+
+  console.log('Itens do menu gerados:', menuItems);
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -312,6 +320,7 @@ const Layout = ({ toggleTheme }) => {
 
         {(user?.role === 'admin' || user?.email === 'admin@hybex') && (
           <MenuItem onClick={() => {
+            console.log('Clicou em Gerenciar, navegando para /admin');
             navigate('/admin');
             handleClose();
           }}>

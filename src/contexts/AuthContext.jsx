@@ -159,6 +159,11 @@ export const AuthProvider = ({ children }) => {
       if (email === 'admin@hybex') {
         userData.role = 'admin';
         console.log('Usuário admin@hybex reconhecido como administrador');
+        
+        // Atualizar o role no Firestore também para persistir
+        await updateDoc(userRef, {
+          role: 'admin'
+        });
       }
       
       // Atualizar data do último login
@@ -174,6 +179,12 @@ export const AuthProvider = ({ children }) => {
       };
       
       console.log('Login bem-sucedido, usuário carregado:', user);
+      
+      // Verificação adicional - garantir que admin@hybex sempre tenha role admin
+      if (email === 'admin@hybex') {
+        user.role = 'admin';
+        console.log('Garantindo que admin@hybex tenha role admin:', user);
+      }
       
       // Definir usuário no estado e localStorage
       setUser(user);
@@ -246,6 +257,30 @@ export const AuthProvider = ({ children }) => {
       return { data: null, error: error.message };
     }
   };
+
+  // Função para reutilizar objeto do usuário do localStorage ao recarregar a página
+  useEffect(() => {
+    // Verificar se há um usuário no localStorage ao carregar a página
+    const storedUser = localStorage.getItem('user');
+    if (storedUser && !user) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        
+        // Verificação adicional - garantir que admin@hybex sempre tenha role admin
+        if (parsedUser.email === 'admin@hybex') {
+          parsedUser.role = 'admin';
+          console.log('Garantindo que admin@hybex tenha role admin após carregar do localStorage:', parsedUser);
+          localStorage.setItem('user', JSON.stringify(parsedUser));
+        }
+        
+        console.log('Carregando usuário do localStorage:', parsedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Erro ao carregar usuário do localStorage:', error);
+        localStorage.removeItem('user');
+      }
+    }
+  }, []);
 
   const value = {
     currentUser,

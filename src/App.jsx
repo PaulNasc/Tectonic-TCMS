@@ -8,103 +8,34 @@ import { Snackbar, Alert, CircularProgress, Box } from '@mui/material'
 import * as userService from './services/userService'
 import './styles/global.css'
 import OnboardingTour from './components/OnboardingTour'
+import { LocalizationProvider } from '@mui/x-date-pickers'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { ptBR } from 'date-fns/locale'
 
 // Temas do sistema
 import { lightTheme, darkTheme } from './theme'
 
-// Componente para inicialização do sistema
-const SystemInitializer = ({ children }) => {
+// Componente para depurar e garantir o carregamento do usuário
+const SystemInitializer = () => {
   const { user } = useAuth()
-  const [initialized, setInitialized] = useState(false)
-  const [error, setError] = useState(null)
-  const [message, setMessage] = useState('')
   
   useEffect(() => {
-    const initSystem = async () => {
-      try {
-        // Verificar se o sistema foi inicializado
-        console.log('Verificando inicialização do sistema...')
-        
-        // Debugar informações do usuário
-        console.log('Usuário autenticado:', user ? {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          isAdmin: user.role === 'admin' || user.email === 'admin@hybex'
-        } : 'Nenhum usuário autenticado')
-        
-        // Garantir que o usuário admin@hybex esteja configurado como administrador
-        if (user) {
-          const { data, error } = await userService.ensureAdminUser('admin@hybex')
-          
-          if (error) {
-            console.warn('Aviso sobre admin@hybex:', error)
-            setMessage('O usuário admin@hybex precisa ser criado como administrador.')
-          } else if (data) {
-            console.log('Usuário admin@hybex configurado:', data)
-          }
-        }
-        
-        setInitialized(true)
-      } catch (err) {
-        console.error('Erro na inicialização do sistema:', err)
-        setError(err.message)
-        setInitialized(true) // Ainda permitir que o app carregue mesmo com erro
-      }
-    }
+    console.log('SystemInitializer - Verificando usuário atual:', user)
     
-    if (user && !initialized) {
-      initSystem()
-    } else if (!user) {
-      setInitialized(true) // Se não há usuário, não precisa inicializar ainda
+    if (user) {
+      console.log('SystemInitializer - Email do usuário:', user.email)
+      console.log('SystemInitializer - Função do usuário:', user.role)
+      console.log('SystemInitializer - É admin@hybex?', user.email === 'admin@hybex')
+      
+      if (user.email === 'admin@hybex' && user.role !== 'admin') {
+        console.error('ERRO: usuário admin@hybex sem role admin!')
+      }
+    } else {
+      console.log('SystemInitializer - Nenhum usuário logado')
     }
-  }, [user, initialized])
+  }, [user])
   
-  if (!initialized) {
-    return (
-      <Box 
-        display="flex" 
-        flexDirection="column" 
-        alignItems="center" 
-        justifyContent="center" 
-        height="100vh"
-        gap={2}
-      >
-        <CircularProgress />
-        <Alert severity="info">Inicializando o sistema...</Alert>
-      </Box>
-    )
-  }
-  
-  return (
-    <>
-      {children}
-      {message && (
-        <Snackbar
-          open={!!message}
-          autoHideDuration={6000}
-          onClose={() => setMessage('')}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={() => setMessage('')} severity="info">
-            {message}
-          </Alert>
-        </Snackbar>
-      )}
-      {error && (
-        <Snackbar
-          open={!!error}
-          autoHideDuration={6000}
-          onClose={() => setError(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={() => setError(null)} severity="error">
-            {error}
-          </Alert>
-        </Snackbar>
-      )}
-    </>
-  )
+  return null // Componente não renderiza nada visualmente
 }
 
 // Componente principal com os providers
@@ -132,12 +63,13 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline enableColorScheme />
       <AuthProvider>
-        <SystemInitializer>
+        <SystemInitializer />
+        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
           <Router>
             <OnboardingTour />
             <AppRoutes toggleTheme={toggleTheme} />
           </Router>
-        </SystemInitializer>
+        </LocalizationProvider>
       </AuthProvider>
     </ThemeProvider>
   )
