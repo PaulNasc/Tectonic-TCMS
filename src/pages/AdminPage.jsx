@@ -31,7 +31,8 @@ import {
   TableRow,
   ListItemIcon,
   Container,
-  Tooltip
+  Tooltip,
+  Snackbar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -45,6 +46,7 @@ import {
 import { collection, getDocs, updateDoc, doc, query, where, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
+import * as userService from '../services/userService';
 
 const USER_ROLES = {
   ADMIN: 'admin',
@@ -78,10 +80,15 @@ const AdminPage = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   useEffect(() => {
     // Verificar se o usuário tem permissão de admin
-    if (user && user.role !== USER_ROLES.ADMIN) {
+    if (user && user.role !== USER_ROLES.ADMIN && user?.email !== 'admin@hybex') {
       setMessage('Você não tem permissão para acessar esta página');
       setMessageType('error');
     } else {
@@ -155,18 +162,14 @@ const AdminPage = () => {
     try {
       setLoadingUsers(true);
       
-      // Simulação - substituir pela chamada real ao Firestore
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Buscar usuários do Firebase
+      const { data, error } = await userService.getAllUsers();
       
-      // Dados de exemplo
-      const mockUsers = [
-        { id: '1', email: 'admin@example.com', name: 'Admin User', role: 'admin', isActive: true, lastLogin: new Date() },
-        { id: '2', email: 'manager@example.com', name: 'Manager User', role: 'manager', isActive: true, lastLogin: new Date() },
-        { id: '3', email: 'user1@example.com', name: 'Regular User 1', role: 'user', isActive: true, lastLogin: new Date() },
-        { id: '4', email: 'user2@example.com', name: 'Disabled User', role: 'user', isActive: false, lastLogin: new Date() }
-      ];
+      if (error) {
+        throw new Error(error);
+      }
       
-      setUsers(mockUsers);
+      setUsers(data || []);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
       setErrorMessage(`Erro ao carregar usuários: ${error.message}`);
@@ -389,7 +392,7 @@ const AdminPage = () => {
     try {
       setLoadingRequests(true);
       
-      const { error } = await userService.approveAccessRequest(requestId);
+      const { data, error } = await userService.approveAccessRequest(requestId);
       
       if (error) {
         throw new Error(error);
@@ -397,6 +400,7 @@ const AdminPage = () => {
       
       // Recarregar solicitações
       await loadAccessRequests();
+      await loadUsers();
       
       setSnackbar({
         open: true,
@@ -459,7 +463,11 @@ const AdminPage = () => {
     }
   };
 
-  if (user && user.role !== USER_ROLES.ADMIN) {
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  if (user && user.role !== USER_ROLES.ADMIN && user?.email !== 'admin@hybex') {
     return (
       <Box p={3}>
         <Alert severity="error">
@@ -1009,6 +1017,22 @@ const AdminPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Adicionar Snackbar no final */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
