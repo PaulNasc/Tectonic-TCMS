@@ -35,6 +35,29 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
+// Logo SVG com nome correto "TECTONIC"
+const LogoSvg = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="140" height="60" viewBox="0 0 140 60">
+    <defs>
+      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#4F46E5" />
+        <stop offset="100%" stopColor="#1E40AF" />
+      </linearGradient>
+      <linearGradient id="gradientAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#06B6D4" />
+        <stop offset="100%" stopColor="#0284C7" />
+      </linearGradient>
+    </defs>
+    <g>
+      <circle cx="30" cy="30" r="24" fill="none" stroke="url(#gradient)" strokeWidth="3" />
+      <path d="M18 30 L42 30 M30 18 L30 42" stroke="url(#gradient)" strokeWidth="3" />
+      <text x="60" y="28" fill="url(#gradient)" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="18">TECTONIC</text>
+      <text x="60" y="45" fill="url(#gradientAccent)" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="14">TCMS</text>
+      <rect x="60" y="32" width="70" height="2" fill="url(#gradientAccent)" />
+    </g>
+  </svg>
+);
+
 const drawerWidth = 240;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
@@ -188,24 +211,24 @@ const Layout = ({ toggleTheme }) => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Tectonic TCMS
-          </Typography>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+            <LogoSvg />
+          </Box>
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">
-                {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-              </IconButton>
+            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+          </IconButton>
           <Tooltip title="Configurações de conta">
-              <IconButton
+            <IconButton
               onClick={handleMenu}
               sx={{ ml: 2 }}
-              >
-                <Avatar 
+            >
+              <Avatar 
                 alt={user?.name || 'User'}
                 src={user?.photoURL}
                 sx={{ width: 32, height: 32 }}
               />
-              </IconButton>
-            </Tooltip>
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBarStyled>
       
@@ -223,16 +246,26 @@ const Layout = ({ toggleTheme }) => {
         open={open}
       >
         <DrawerHeader>
+          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <Box sx={{ width: 60, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 60 60">
+                <defs>
+                  <linearGradient id="gradientIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#4F46E5" />
+                    <stop offset="100%" stopColor="#1E40AF" />
+                  </linearGradient>
+                </defs>
+                <g>
+                  <circle cx="30" cy="30" r="24" fill="none" stroke="url(#gradientIcon)" strokeWidth="3" />
+                  <path d="M18 30 L42 30 M30 18 L30 42" stroke="url(#gradientIcon)" strokeWidth="3" />
+                </g>
+              </svg>
+            </Box>
+          </Box>
           <IconButton onClick={handleDrawerClose}>
             <ChevronLeftIcon />
           </IconButton>
         </DrawerHeader>
-        <Divider />
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
-          <Typography variant="h6" component="div" fontWeight="bold">
-            Tectonic TCMS
-          </Typography>
-        </Box>
         <Divider />
         <List>
           {menuItems.map((item) => (
