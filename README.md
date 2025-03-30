@@ -1,120 +1,167 @@
-# CRM QA Test - Sistema de Gerenciamento de Testes
+# Tectonic TCMS
 
-Um sistema completo para gerenciamento de testes de software seguindo a metodologia ORANGE, desenvolvido com React, Material UI e Firebase.
+Plataforma completa de gerenciamento de casos de testes e ciclos de execução desenvolvida com React, Material UI e Firebase. Uma solução robusta para equipes de QA gerenciarem seus processos de teste de forma eficiente e escalável.
 
-## 🔍 Sobre o Projeto
+## Características Principais
 
-O CRM QA Test é uma plataforma abrangente para gerenciamento de testes de qualidade em projetos de software. Permite criar, organizar, executar e acompanhar testes, gerando métricas e relatórios para uma visão completa da qualidade do produto.
+- Gerenciamento completo de projetos de teste
+- Criação e organização de suítes de teste
+- Definição detalhada de casos de teste com passos, pré-requisitos e resultados esperados
+- Execução de ciclos de teste com ambiente configurável
+- Histórico de execuções com métricas e estatísticas
+- Relatórios detalhados de progresso e cobertura de testes
+- Interface moderna e responsiva com Material UI
+- Tema escuro (Dark Mode) para redução de fadiga visual
+- Autenticação segura com Firebase
+- Banco de dados em tempo real com Firestore
+- Administração de usuários e permissões
 
-### Metodologia ORANGE
+## Tecnologias Utilizadas
 
-O sistema é baseado na metodologia ORANGE:
+- React 18
+- Material UI 5
+- Firebase (Auth & Firestore)
+- Vite
+- React Router
+- Context API
+- Custom Hooks
 
-- **O**rganização: Projetos como unidade principal, suítes de teste organizadas por projeto e casos de teste dentro das suítes.
-- **R**equisitos: Descrição detalhada dos casos de teste, pré-requisitos documentados e priorização.
-- **A**utomação: Suporte para testes manuais e automatizados, cálculo de taxas de automação.
-- **N**avegação: Interface intuitiva com navegação hierárquica e opções de filtragem.
-- **G**erenciamento: Controle de acesso baseado em papéis, estatísticas, métricas e histórico de execução.
-- **E**xecução: Execução de testes manuais e automatizados, registro de resultados e coleta de evidências.
+## Pré-requisitos
 
-## 🚀 Recursos Principais
-
-- **Gerenciamento de Projetos**: Crie e gerencie projetos, defina membros e acompanhe o progresso.
-- **Organização de Testes**: Organize testes em suítes lógicas com casos de teste detalhados.
-- **Execução de Testes**: Execute testes e registre resultados (passou, falhou, bloqueado).
-- **Relatórios**: Gere relatórios detalhados sobre progresso e qualidade dos testes.
-- **Painel Administrativo**: Gerencie usuários, papéis e configurações do sistema.
-- **Tema Escuro/Claro**: Interface adaptável com suporte a temas.
-
-## 💻 Tecnologias Utilizadas
-
-- **Frontend**: React, Material UI, Framer Motion
-- **Backend**: Firebase (Firestore, Authentication)
-- **Autenticação**: Firebase Authentication
-- **Estrutura de Dados**: Firestore Database
-
-## 🏗️ Arquitetura do Sistema
-
-- **Autenticação**: Sistema completo de login, registro e recuperação de senha
-- **Gerenciamento de Usuários**: Administração de usuários e papéis (admin, gerente, usuário)
-- **Projetos**: Criação e gerenciamento de projetos com controle de membros
-- **Suítes de Teste**: Organização lógica de testes relacionados
-- **Casos de Teste**: Definição detalhada de testes individuais
-- **Execução**: Sistema para executar e registrar resultados de testes
-- **Relatórios**: Métricas e estatísticas para acompanhamento de progresso
-
-## 🔧 Configuração e Uso
-
-### Pré-requisitos
-
-- Node.js (v14.0.0 ou superior)
+- Node.js 18+
 - npm ou yarn
-- Conta no Firebase com Firestore e Authentication configurados
+- Conta no Firebase
+- Git
 
-### Instalação
+## Configuração
 
-1. Clone o repositório
-   ```
-   git clone https://github.com/seu-usuario/crm-qa-test.git
-   cd crm-qa-test
-   ```
+1. Clone o repositório:
+```bash
+git clone https://github.com/PaulNasc/CRM-Tectonic-TCMS.git
+cd CRM-Tectonic-TCMS
+```
 
-2. Instale as dependências
-   ```
-   npm install
-   ```
+2. Instale as dependências:
+```bash
+npm install
+```
 
-3. Configure as variáveis de ambiente criando um arquivo `.env.local` na raiz do projeto
-   ```
-   VITE_FIREBASE_API_KEY=seu-api-key
-   VITE_FIREBASE_AUTH_DOMAIN=seu-auth-domain
-   VITE_FIREBASE_PROJECT_ID=seu-project-id
-   VITE_FIREBASE_STORAGE_BUCKET=seu-storage-bucket
-   VITE_FIREBASE_MESSAGING_SENDER_ID=seu-messaging-sender-id
-   VITE_FIREBASE_APP_ID=seu-app-id
-   ```
+3. Configure as variáveis de ambiente:
+- Copie o arquivo `.env.example` para `.env`
+- Preencha as variáveis com suas credenciais do Firebase
 
-4. Inicie o servidor de desenvolvimento
-   ```
-   npm run dev
-   ```
+```env
+# Firebase
+VITE_FIREBASE_API_KEY=sua_api_key
+VITE_FIREBASE_AUTH_DOMAIN=seu_projeto.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=seu_projeto
+VITE_FIREBASE_STORAGE_BUCKET=seu_projeto.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=seu_sender_id
+VITE_FIREBASE_APP_ID=seu_app_id
+VITE_FIREBASE_MEASUREMENT_ID=seu_measurement_id
 
-### Acessando o Sistema
+# Configurações do App
+VITE_APP_NAME=Tectonic TCMS
+VITE_APP_DESCRIPTION=Plataforma de gerenciamento de testes
+```
 
-- O sistema estará acessível em `http://localhost:5173`
-- Para acessar como administrador, use o email `admin@hybex` e a senha configurada
+## Desenvolvimento
 
-## 📋 Informações Importantes
+Para iniciar o ambiente de desenvolvimento:
 
-### Índices do Firestore
+```bash
+npm run dev
+```
 
-Para o funcionamento correto, é necessário criar os seguintes índices no Firestore:
+## Build
 
-1. **Índice de Projetos**:
-   - Coleção: `projects`
-   - Campos: `memberIds` (array) ASC, `createdAt` DESC
+Para criar uma build de produção:
 
-2. **Índice de Suítes de Teste**:
-   - Coleção: `testSuites`
-   - Campos: `projectId` ASC, `createdAt` DESC
+```bash
+npm run build
+```
 
-### Funções de Administrador
+## Funcionalidades Detalhadas
 
-O usuário `admin@hybex` tem acesso a funcionalidades administrativas:
+### Gerenciamento de Projetos
+- Criação de múltiplos projetos
+- Associação de usuários a projetos específicos
+- Visualização de status e progresso de projetos
+
+### Suítes de Teste
+- Agrupamento lógico de casos de teste
+- Definição de descrição e propósito da suíte
+- Métricas de passagem e cobertura
+
+### Casos de Teste
+- Definição detalhada com título, descrição e prioridade
+- Pré-requisitos para execução
+- Passos sequenciais de teste
+- Resultados esperados
+- Associação com requisitos ou funcionalidades
+
+### Execução de Testes
+- Fluxo intuitivo de execução de testes
+- Definição de ambiente (Desenvolvimento, Homologação, Produção)
+- Status individuais por caso de teste (Passou, Falhou, Bloqueado)
+- Registro de observações por execução de teste
+
+### Relatórios e Métricas
+- Dashboard com visão geral do projeto
+- Taxas de passagem por suíte e projeto
+- Histórico completo de execuções
+- Detalhamento de falhas e bloqueios
+
+### Administração
 - Gerenciamento de usuários
-- Visualização de estatísticas globais
-- Opção para resetar dados do sistema (protegida por múltiplas confirmações)
+- Atribuição de papéis e permissões
+- Configurações globais do sistema
 
-## 📱 Capturas de Tela
+## Roadmap de Funcionalidades Futuras
 
-![Dashboard](image_url_here)
-![Gestão de Projetos](image_url_here)
-![Execução de Testes](image_url_here)
+- Integração com sistemas de CI/CD
+- API para automação de resultados
+- Integração com ferramentas de bug tracking
+- Exportação de relatórios em diversos formatos
+- Matriz de rastreabilidade de requisitos
 
-## 📄 Licença
+## Contribuições
 
-Este projeto está licenciado sob a Licença MIT - veja o arquivo LICENSE para detalhes.
+Contribuições para este projeto são bem-vindas! Se você tem ideias, sugestões ou correções, sinta-se à vontade para:
+
+1. Abrir uma issue descrevendo a funcionalidade ou correção proposta
+2. Enviar um pull request com suas alterações
+3. Compartilhar feedback sobre melhorias possíveis
+
+Para contribuir:
+```bash
+# Faça um fork do repositório
+# Clone seu fork
+git clone https://github.com/seu-usuario/CRM-Tectonic-TCMS.git
+
+# Adicione o repositório original como upstream
+git remote add upstream https://github.com/PaulNasc/CRM-Tectonic-TCMS.git
+
+# Crie uma branch para suas alterações
+git checkout -b feature/sua-funcionalidade
+
+# Faça commit das alterações
+git commit -m "Adicionada funcionalidade X"
+
+# Envie para seu fork
+git push origin feature/sua-funcionalidade
+
+# Abra um Pull Request no GitHub
+```
+
+## Repositório
+
+O código-fonte está disponível em: [https://github.com/PaulNasc/CRM-Tectonic-TCMS](https://github.com/PaulNasc/CRM-Tectonic-TCMS)
+
+## Licença
+
+Este projeto está disponível para uso e contribuições da comunidade.
 
 ---
 
-Desenvolvido como parte do sistema de gerenciamento de qualidade para projetos de software. 
+Desenvolvido por Paulo Ricardo Nascimento dos Santos 
