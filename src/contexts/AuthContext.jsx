@@ -7,9 +7,10 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import * as userService from '../services/userService';
+import * as authService from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
   const auth = getAuth();
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export const AuthProvider = ({ children }) => {
           if (userDoc.exists()) {
             // Atualizar último login
             userData = userDoc.data();
-            await setDoc(userDocRef, { lastLogin: serverTimestamp() }, { merge: true });
+            await updateDoc(userDocRef, { lastLogin: serverTimestamp() });
           } else {
             // Criar documento de usuário se não existir
             userData = {
@@ -58,7 +60,7 @@ export const AuthProvider = ({ children }) => {
             console.log('Usuário admin@hybex detectado');
             if (userData.role !== 'admin') {
               console.log('Atualizando usuário para admin');
-              await setDoc(userDocRef, { role: 'admin' }, { merge: true });
+              await updateDoc(userDocRef, { role: 'admin' });
               userData.role = 'admin';
             }
           }
@@ -122,11 +124,68 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return { user: userCredential.user, error: null };
+      setLoading(true);
+      
+      console.log('Iniciando processo de login para:', email);
+      
+      // Fazer login com Firebase Auth
+      const userCredential = await authService.signIn(email, password);
+      
+      if (!userCredential) {
+        console.error('Login falhou: credenciais inválidas');
+        return { user: null, error: 'Credenciais inválidas' };
+      }
+      
+      // Buscar dados adicionais do usuário
+      const userRef = doc(db, 'users', userCredential.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        console.error('Usuário não encontrado no banco de dados');
+        await authService.logout();
+        return { user: null, error: 'Usuário não encontrado. Contate o administrador.' };
+      }
+      
+      const userData = userDoc.data();
+      
+      // Verificar se o usuário está ativo
+      if (userData.is_active === false) {
+        console.error('Conta desativada');
+        await authService.logout();
+        return { user: null, error: 'Esta conta está desativada. Contate o administrador.' };
+      }
+      
+      // Conta especial para admin@hybex
+      if (email === 'admin@hybex') {
+        userData.role = 'admin';
+        console.log('Usuário admin@hybex reconhecido como administrador');
+      }
+      
+      // Atualizar data do último login
+      await updateDoc(userRef, {
+        lastLogin: serverTimestamp()
+      });
+      
+      // Construir objeto completo do usuário
+      const user = {
+        id: userCredential.uid,
+        email: userCredential.email,
+        ...userData
+      };
+      
+      console.log('Login bem-sucedido, usuário carregado:', user);
+      
+      // Definir usuário no estado e localStorage
+      setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
+      setAuthenticated(true);
+      
+      return { user, error: null };
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
+      console.error('Erro durante o login:', error);
       return { user: null, error: error.message };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -192,6 +251,7 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     user,
     loading,
+    authenticated,
     register,
     login,
     logout,

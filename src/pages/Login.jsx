@@ -27,6 +27,8 @@ import {
   Email as EmailIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { db } from '../config/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -139,6 +141,28 @@ const StyledFormControlLabel = styled(FormControlLabel)`
   }
 `;
 
+const LogoSvg = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="140" height="60" viewBox="0 0 140 60">
+    <defs>
+      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#4F46E5" />
+        <stop offset="100%" stopColor="#1E40AF" />
+      </linearGradient>
+      <linearGradient id="gradientAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#06B6D4" />
+        <stop offset="100%" stopColor="#0284C7" />
+      </linearGradient>
+    </defs>
+    <g>
+      <circle cx="30" cy="30" r="24" fill="none" stroke="url(#gradient)" strokeWidth="3" />
+      <path d="M18 30 L42 30 M30 18 L30 42" stroke="url(#gradient)" strokeWidth="3" />
+      <text x="60" y="28" fill="url(#gradient)" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="18">TECTONIC</text>
+      <text x="60" y="45" fill="url(#gradientAccent)" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="14">TCMS</text>
+      <rect x="60" y="32" width="70" height="2" fill="url(#gradientAccent)" />
+    </g>
+  </svg>
+);
+
 const Login = () => {
   const navigate = useNavigate();
   const { login, resetPassword } = useAuth();
@@ -227,7 +251,12 @@ const Login = () => {
         localStorage.removeItem('savedCredentials');
       }
       
-      // Navegação para home
+      // Navegação para home com redirect para evitar histórico de navegação
+      // que poderia permitir voltar para a tela de login
+      console.log('Redirecionando para home após login');
+      
+      // Usar replace: true é essencial para evitar o problema do login duplo
+      // pois remove a página de login do histórico de navegação
       navigate('/', { replace: true });
       
     } catch (error) {
@@ -237,6 +266,7 @@ const Login = () => {
         message: error.message || 'Erro ao fazer login. Tente novamente.',
         severity: 'error'
       });
+    } finally {
       setLoading(false); // Garante que loading é definido como false em caso de erro
     }
   };
@@ -356,7 +386,9 @@ const Login = () => {
       >
         <LoginCard>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Logo src="/src/assets/logo-tectonic.svg" alt="Tectonic TCMS Logo" />
+            <Box sx={{ width: 140, height: 60, mb: 2 }}>
+              <LogoSvg />
+            </Box>
             <Typography variant="h5" sx={{ color: '#ffffff', mb: 1 }}>
               Bem-vindo ao Tectonic TCMS
             </Typography>
