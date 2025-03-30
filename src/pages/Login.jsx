@@ -23,7 +23,8 @@ import {
 import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  PersonAdd as PersonAddIcon
+  PersonAdd as PersonAddIcon,
+  Email as EmailIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -48,9 +49,9 @@ const LoginCard = styled(Card)`
 `;
 
 const Logo = styled.img`
-  width: 120px;
+  width: 140px;
   height: auto;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 `;
 
 const Form = styled.form`
@@ -140,7 +141,7 @@ const StyledFormControlLabel = styled(FormControlLabel)`
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, resetPassword } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -157,6 +158,9 @@ const Login = () => {
     message: ''
   });
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -195,11 +199,23 @@ const Login = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    
+    if (loading) return; // Evita cliques múltiplos
+    
     setLoading(true);
     
     try {
-      const userData = await login(formData.email, formData.password);
-      console.log('Login bem-sucedido:', userData);
+      const { user, error } = await login(formData.email, formData.password);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (!user) {
+        throw new Error('Falha no login. Tente novamente.');
+      }
+      
+      console.log('Login bem-sucedido:', user);
       
       // Salvar ou remover credenciais com base no checkbox
       if (rememberMe) {
@@ -211,9 +227,9 @@ const Login = () => {
         localStorage.removeItem('savedCredentials');
       }
       
-      setTimeout(() => {
-        navigate('/', { replace: true });
-      }, 100);
+      // Navegação para home
+      navigate('/', { replace: true });
+      
     } catch (error) {
       console.error('Erro no login:', error);
       setSnackbar({
@@ -221,8 +237,7 @@ const Login = () => {
         message: error.message || 'Erro ao fazer login. Tente novamente.',
         severity: 'error'
       });
-    } finally {
-      setLoading(false);
+      setLoading(false); // Garante que loading é definido como false em caso de erro
     }
   };
 
@@ -241,8 +256,20 @@ const Login = () => {
     setLoading(true);
     
     try {
-      // Simular envio da solicitação de registro
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Implementar o envio da solicitação de registro para o Firebase
+      const accessRequestData = {
+        name: registerData.name,
+        email: registerData.email,
+        password: registerData.password,
+        requestedRole: registerData.role,
+        status: 'pending',
+        message: registerData.message,
+        createdAt: new Date()
+      };
+      
+      // Salvar no Firebase
+      const accessRequestRef = collection(db, 'accessRequests');
+      await addDoc(accessRequestRef, accessRequestData);
       
       setSnackbar({
         open: true,
@@ -270,12 +297,54 @@ const Login = () => {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      setSnackbar({
+        open: true,
+        message: 'Por favor, informe seu e-mail.',
+        severity: 'error'
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const { error } = await resetPassword(resetEmail);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      setResetSent(true);
+      setSnackbar({
+        open: true,
+        message: 'E-mail de recuperação enviado com sucesso!',
+        severity: 'success'
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Erro ao enviar e-mail de recuperação. Tente novamente.',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleTogglePassword = () => {
     setShowPassword(prev => !prev);
   };
 
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  const handleResetClose = () => {
+    setShowResetPasswordDialog(false);
+    setResetEmail('');
+    setResetSent(false);
   };
 
   return (
@@ -287,7 +356,7 @@ const Login = () => {
       >
         <LoginCard>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Logo src="/src/assets/logo-hybex.svg" alt="Hybex Logo" />
+            <Logo src="/src/assets/logo-tectonic.svg" alt="Tectonic TCMS Logo" />
             <Typography variant="h5" sx={{ color: '#ffffff', mb: 1 }}>
               Bem-vindo ao Tectonic TCMS
             </Typography>
@@ -344,7 +413,10 @@ const Login = () => {
                 }
                 label="Lembrar-me"
               />
-              <ForgotPassword variant="body2">
+              <ForgotPassword 
+                variant="body2"
+                onClick={() => setShowResetPasswordDialog(true)}
+              >
                 Esqueceu sua senha?
               </ForgotPassword>
             </Box>
@@ -376,7 +448,7 @@ const Login = () => {
       {/* Diálogo de Registro */}
       <Dialog 
         open={showRegisterDialog} 
-        onClose={() => setShowRegisterDialog(false)}
+        onClose={() => !loading && setShowRegisterDialog(false)}
         maxWidth="sm"
         fullWidth
         PaperProps={{
@@ -455,6 +527,7 @@ const Login = () => {
           <Button 
             onClick={() => setShowRegisterDialog(false)}
             sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+            disabled={loading}
           >
             Cancelar
           </Button>
@@ -465,6 +538,79 @@ const Login = () => {
           >
             {loading ? 'Enviando...' : 'Enviar Solicitação'}
           </LoginButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo de Recuperação de Senha */}
+      <Dialog
+        open={showResetPasswordDialog}
+        onClose={handleResetClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: 'rgba(18, 18, 18, 0.95)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0, 160, 252, 0.2)',
+            borderRadius: '12px',
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: '#ffffff' }}>
+          Recuperar Senha
+        </DialogTitle>
+        
+        <DialogContent>
+          {resetSent ? (
+            <Box sx={{ py: 2 }}>
+              <Alert severity="success" sx={{ mb: 2 }}>
+                E-mail de recuperação enviado com sucesso!
+              </Alert>
+              <Typography variant="body2" color="text.secondary">
+                Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 1 }}>
+                Digite seu e-mail e enviaremos um link para redefinir sua senha.
+              </Typography>
+              <StyledTextField
+                fullWidth
+                label="Email"
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                required
+                margin="normal"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </>
+          )}
+        </DialogContent>
+        
+        <DialogActions sx={{ padding: '16px 24px' }}>
+          <Button 
+            onClick={handleResetClose}
+            sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+          >
+            {resetSent ? 'Fechar' : 'Cancelar'}
+          </Button>
+          {!resetSent && (
+            <LoginButton
+              onClick={handleResetPassword}
+              disabled={loading || !resetEmail}
+              startIcon={loading && <CircularProgress size={20} color="inherit" />}
+            >
+              {loading ? 'Enviando...' : 'Enviar Link de Recuperação'}
+            </LoginButton>
+          )}
         </DialogActions>
       </Dialog>
 

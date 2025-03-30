@@ -29,7 +29,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  ListItemIcon
+  ListItemIcon,
+  Container,
+  Tooltip
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -37,7 +39,8 @@ import {
   Edit as EditIcon,
   Block as BlockIcon,
   Check as CheckIcon,
-  SecurityUpdateGood as SecurityIcon
+  SecurityUpdateGood as SecurityIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { collection, getDocs, updateDoc, doc, query, where, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -69,6 +72,12 @@ const AdminPage = () => {
   const [resetConfirmation, setResetConfirmation] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [resetInProgress, setResetInProgress] = useState(false);
+  const [accessRequests, setAccessRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [requestError, setRequestError] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showRejectionDialog, setShowRejectionDialog] = useState(false);
 
   useEffect(() => {
     // Verificar se o usuário tem permissão de admin
@@ -77,6 +86,7 @@ const AdminPage = () => {
       setMessageType('error');
     } else {
       loadUsers();
+      loadAccessRequests();
     }
   }, [user]);
 
@@ -355,6 +365,100 @@ const AdminPage = () => {
     }
   };
 
+  const loadAccessRequests = async () => {
+    try {
+      setLoadingRequests(true);
+      setRequestError(null);
+      
+      const { data, error } = await userService.getPendingAccessRequests();
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      setAccessRequests(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar solicitações de acesso:', error);
+      setRequestError(error.message);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const handleApproveRequest = async (requestId) => {
+    try {
+      setLoadingRequests(true);
+      
+      const { error } = await userService.approveAccessRequest(requestId);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      // Recarregar solicitações
+      await loadAccessRequests();
+      
+      setSnackbar({
+        open: true,
+        message: 'Solicitação aprovada com sucesso!',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Erro ao aprovar solicitação:', error);
+      setSnackbar({
+        open: true,
+        message: `Erro ao aprovar solicitação: ${error.message}`,
+        severity: 'error'
+      });
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const handleOpenRejectDialog = (request) => {
+    setSelectedRequest(request);
+    setRejectionReason('');
+    setShowRejectionDialog(true);
+  };
+
+  const handleRejectRequest = async () => {
+    if (!selectedRequest) return;
+    
+    try {
+      setLoadingRequests(true);
+      
+      const { error } = await userService.rejectAccessRequest(
+        selectedRequest.id, 
+        rejectionReason
+      );
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      // Recarregar solicitações
+      await loadAccessRequests();
+      
+      setSnackbar({
+        open: true,
+        message: 'Solicitação rejeitada com sucesso!',
+        severity: 'success'
+      });
+      
+      setShowRejectionDialog(false);
+      setSelectedRequest(null);
+    } catch (error) {
+      console.error('Erro ao rejeitar solicitação:', error);
+      setSnackbar({
+        open: true,
+        message: `Erro ao rejeitar solicitação: ${error.message}`,
+        severity: 'error'
+      });
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
   if (user && user.role !== USER_ROLES.ADMIN) {
     return (
       <Box p={3}>
@@ -366,7 +470,7 @@ const AdminPage = () => {
   }
 
   return (
-    <Box p={3}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom>
         Administração do Sistema
       </Typography>
@@ -769,7 +873,143 @@ const AdminPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      
+      {/* Nova seção para solicitações de acesso */}
+      <Paper sx={{ p: 3, mt: 4 }}>
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" component="h2">
+            Solicitações de Acesso Pendentes
+          </Typography>
+          <Button 
+            variant="outlined" 
+            startIcon={<RefreshIcon />} 
+            onClick={loadAccessRequests}
+            disabled={loadingRequests}
+          >
+            Atualizar
+          </Button>
+        </Box>
+        
+        {requestError && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {requestError}
+          </Alert>
+        )}
+        
+        {loadingRequests ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : accessRequests.length > 0 ? (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Nome</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Perfil Solicitado</TableCell>
+                  <TableCell>Data</TableCell>
+                  <TableCell>Mensagem</TableCell>
+                  <TableCell align="right">Ações</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {accessRequests.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell>{request.name}</TableCell>
+                    <TableCell>{request.email}</TableCell>
+                    <TableCell>
+                      {request.requestedRole === 'admin' ? 'Administrador' : 
+                       request.requestedRole === 'qa_lead' ? 'Líder QA' : 
+                       request.requestedRole === 'qa_analyst' ? 'Analista QA' : 'Usuário'}
+                    </TableCell>
+                    <TableCell>
+                      {request.createdAt instanceof Date 
+                        ? request.createdAt.toLocaleDateString('pt-BR') 
+                        : new Date(request.createdAt).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip title={request.message || 'Sem mensagem'}>
+                        <span>{(request.message || '').substring(0, 20)}{(request.message || '').length > 20 ? '...' : ''}</span>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Button
+                        variant="contained"
+                        color="success"
+                        size="small"
+                        onClick={() => handleApproveRequest(request.id)}
+                        disabled={loadingRequests}
+                        sx={{ mr: 1 }}
+                      >
+                        Aprovar
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        size="small"
+                        onClick={() => handleOpenRejectDialog(request)}
+                        disabled={loadingRequests}
+                      >
+                        Rejeitar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography color="text.secondary">
+              Não há solicitações de acesso pendentes.
+            </Typography>
+          </Box>
+        )}
+      </Paper>
+      
+      {/* Diálogo de rejeição */}
+      <Dialog
+        open={showRejectionDialog}
+        onClose={() => !loadingRequests && setShowRejectionDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Rejeitar Solicitação</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Você está rejeitando a solicitação de acesso de <strong>{selectedRequest?.name}</strong> ({selectedRequest?.email}).
+            Você pode fornecer um motivo para a rejeição (opcional).
+          </DialogContentText>
+          <TextField
+            label="Motivo da rejeição"
+            fullWidth
+            multiline
+            rows={3}
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            variant="outlined"
+            margin="normal"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setShowRejectionDialog(false)}
+            disabled={loadingRequests}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleRejectRequest}
+            color="error"
+            variant="contained"
+            disabled={loadingRequests}
+          >
+            {loadingRequests ? <CircularProgress size={24} /> : 'Rejeitar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
   );
 };
 

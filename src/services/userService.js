@@ -9,7 +9,10 @@ import {
   query,
   where,
   serverTimestamp,
-  deleteDoc
+  deleteDoc,
+  addDoc,
+  orderBy,
+  limit
 } from 'firebase/firestore';
 import * as authService from './authService';
 
@@ -31,90 +34,103 @@ export const getAllUsers = async () => {
 // Buscar solicitações de acesso pendentes
 export const getPendingAccessRequests = async () => {
   try {
-    const { data: requests, error } = await supabase
-      .from('access_requests')
-      .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return requests;
+    console.log('Buscando solicitações de acesso pendentes');
+    const requestsRef = collection(db, 'accessRequests');
+    const q = query(requestsRef, where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    
+    const requests = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt
+    }));
+    
+    console.log(`${requests.length} solicitações pendentes encontradas`);
+    return { data: requests, error: null };
   } catch (error) {
     console.error('Erro ao buscar solicitações pendentes:', error);
-    throw error;
+    return { data: [], error: error.message };
   }
 };
 
 // Aprovar solicitação de acesso
 export const approveAccessRequest = async (requestId) => {
   try {
-    const { data: request, error: requestError } = await supabase
-      .from('access_requests')
-      .select('*')
-      .eq('id', requestId)
-      .single();
-
-    if (requestError) throw requestError;
-
-    // Criar usuário no Supabase Auth
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-      email: request.email,
-      password: request.password,
-      email_confirm: true,
-      user_metadata: {
-        name: request.name,
-        role: request.requested_role
-      }
+    console.log('Aprovando solicitação de acesso:', requestId);
+    
+    // Obter detalhes da solicitação
+    const requestRef = doc(db, 'accessRequests', requestId);
+    const requestSnap = await getDoc(requestRef);
+    
+    if (!requestSnap.exists()) {
+      throw new Error('Solicitação não encontrada');
+    }
+    
+    const requestData = requestSnap.data();
+    
+    // Criar usuário no Auth
+    const { data: authUser, error: authError } = await authService.signUp({
+      email: requestData.email,
+      password: requestData.password,
+      name: requestData.name
     });
-
-    if (authError) throw authError;
-
-    // Criar registro na tabela de usuários
-    const { error: userError } = await supabase
-      .from('users')
-      .insert([
-        {
-          id: authUser.id,
-          name: request.name,
-          email: request.email,
-          role: request.requested_role,
-          is_active: true
-        }
-      ]);
-
-    if (userError) throw userError;
-
+    
+    if (authError) {
+      throw new Error(`Erro ao criar conta: ${authError}`);
+    }
+    
+    // Criar documento do usuário no Firestore
+    const userRef = doc(db, 'users', authUser.uid);
+    await setDoc(userRef, {
+      name: requestData.name,
+      email: requestData.email,
+      role: requestData.requestedRole || 'user',
+      is_active: true,
+      approvedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lastLogin: null
+    });
+    
     // Atualizar status da solicitação
-    const { error: updateError } = await supabase
-      .from('access_requests')
-      .update({ status: 'approved', processed_at: new Date() })
-      .eq('id', requestId);
-
-    if (updateError) throw updateError;
-
-    return true;
+    await updateDoc(requestRef, {
+      status: 'approved',
+      processedAt: serverTimestamp(),
+      processedBy: requestData.approvedBy || 'admin'
+    });
+    
+    console.log('Solicitação aprovada com sucesso');
+    return { 
+      data: { 
+        userId: authUser.uid,
+        email: requestData.email,
+        name: requestData.name 
+      }, 
+      error: null 
+    };
   } catch (error) {
     console.error('Erro ao aprovar solicitação:', error);
-    throw error;
+    return { data: null, error: error.message };
   }
 };
 
 // Rejeitar solicitação de acesso
-export const rejectAccessRequest = async (requestId) => {
+export const rejectAccessRequest = async (requestId, reason) => {
   try {
-    const { error } = await supabase
-      .from('access_requests')
-      .update({
-        status: 'rejected',
-        processed_at: new Date()
-      })
-      .eq('id', requestId);
-
-    if (error) throw error;
-    return true;
+    console.log('Rejeitando solicitação de acesso:', requestId);
+    
+    const requestRef = doc(db, 'accessRequests', requestId);
+    await updateDoc(requestRef, {
+      status: 'rejected',
+      rejectionReason: reason || 'Solicitação rejeitada pelo administrador',
+      processedAt: serverTimestamp()
+    });
+    
+    console.log('Solicitação rejeitada com sucesso');
+    return { data: { id: requestId }, error: null };
   } catch (error) {
     console.error('Erro ao rejeitar solicitação:', error);
-    throw error;
+    return { data: null, error: error.message };
   }
 };
 
@@ -173,23 +189,49 @@ export const toggleUserStatus = async (userId) => {
 // Criar solicitação de acesso
 export const createAccessRequest = async (userData) => {
   try {
-    const { error } = await supabase
-      .from('access_requests')
-      .insert([
-        {
-          name: userData.name,
-          email: userData.email,
-          password: userData.password, // Será criptografado pelo Supabase
-          requested_role: userData.role,
-          status: 'pending'
-        }
-      ]);
-
-    if (error) throw error;
-    return true;
+    console.log('Criando solicitação de acesso para:', userData.email);
+    
+    // Verificar se já existe solicitação pendente com este email
+    const existingRequestQuery = query(
+      collection(db, 'accessRequests'), 
+      where('email', '==', userData.email),
+      where('status', '==', 'pending')
+    );
+    const existingSnapshots = await getDocs(existingRequestQuery);
+    
+    if (!existingSnapshots.empty) {
+      throw new Error('Já existe uma solicitação pendente para este e-mail');
+    }
+    
+    // Verificar se já existe usuário com este email
+    const existingUserQuery = query(
+      collection(db, 'users'), 
+      where('email', '==', userData.email),
+      limit(1)
+    );
+    const existingUserSnapshots = await getDocs(existingUserQuery);
+    
+    if (!existingUserSnapshots.empty) {
+      throw new Error('Este e-mail já está registrado no sistema');
+    }
+    
+    // Criar documento de solicitação
+    const accessRequestRef = collection(db, 'accessRequests');
+    const docRef = await addDoc(accessRequestRef, {
+      name: userData.name,
+      email: userData.email,
+      password: userData.password, // Nota: idealmente, não armazenar senhas em texto plano
+      requestedRole: userData.role || 'user',
+      message: userData.message || '',
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+    
+    console.log('Solicitação de acesso criada com sucesso:', docRef.id);
+    return { data: { id: docRef.id }, error: null };
   } catch (error) {
     console.error('Erro ao criar solicitação de acesso:', error);
-    throw error;
+    return { data: null, error: error.message };
   }
 };
 
@@ -236,30 +278,19 @@ export const createUser = async (userData) => {
 
 export const getUserById = async (userId) => {
   try {
-    console.log('Buscando usuário por ID:', userId);
     const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
+    const userDoc = await getDoc(userRef);
     
-    if (!userSnap.exists()) {
-      console.log('Usuário não encontrado:', userId);
-      return { data: null, error: 'Usuário não encontrado' };
+    if (!userDoc.exists()) {
+      throw new Error('Usuário não encontrado');
     }
-    
-    const userData = userSnap.data();
-    console.log('Usuário encontrado:', userData);
-    
+
     return { 
-      data: {
-        id: userSnap.id,
-        ...userData,
-        createdAt: userData.createdAt?.toDate?.() || userData.createdAt,
-        lastLogin: userData.lastLogin?.toDate?.() || userData.lastLogin
-      }, 
+      data: { id: userDoc.id, ...userDoc.data() }, 
       error: null 
     };
   } catch (error) {
-    console.error('Erro ao buscar usuário:', error);
-    return { data: null, error: error.message };
+    return { data: null, error };
   }
 };
 
@@ -286,161 +317,5 @@ export const activateUser = async (userId) => {
     return { error: null };
   } catch (error) {
     return { error };
-  }
-};
-
-export const getUserByEmail = async (email) => {
-  try {
-    console.log('Buscando usuário por email:', email);
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('email', '==', email));
-    const querySnapshot = await getDocs(q);
-    
-    if (querySnapshot.empty) {
-      console.log('Usuário não encontrado para o email:', email);
-      return { data: null, error: 'Usuário não encontrado' };
-    }
-    
-    const userDoc = querySnapshot.docs[0];
-    const userData = userDoc.data();
-    console.log('Usuário encontrado:', userData);
-    
-    return { 
-      data: {
-        id: userDoc.id,
-        ...userData,
-        createdAt: userData.createdAt?.toDate?.() || userData.createdAt,
-        lastLogin: userData.lastLogin?.toDate?.() || userData.lastLogin
-      }, 
-      error: null 
-    };
-  } catch (error) {
-    console.error('Erro ao buscar usuário por email:', error);
-    return { data: null, error: error.message };
-  }
-};
-
-export const updateUserRole = async (userId, role) => {
-  try {
-    console.log(`Atualizando perfil do usuário ${userId} para ${role}`);
-    const userRef = doc(db, 'users', userId);
-    
-    await updateDoc(userRef, {
-      role,
-      updatedAt: serverTimestamp()
-    });
-    
-    return { data: { id: userId, role }, error: null };
-  } catch (error) {
-    console.error('Erro ao atualizar perfil do usuário:', error);
-    return { data: null, error: error.message };
-  }
-};
-
-export const listUsers = async () => {
-  try {
-    console.log('Listando todos os usuários');
-    const usersRef = collection(db, 'users');
-    const querySnapshot = await getDocs(usersRef);
-    
-    const users = querySnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate?.() || data.createdAt,
-        lastLogin: data.lastLogin?.toDate?.() || data.lastLogin
-      };
-    });
-    
-    console.log(`${users.length} usuários encontrados`);
-    return { data: users, error: null };
-  } catch (error) {
-    console.error('Erro ao listar usuários:', error);
-    return { data: [], error: error.message };
-  }
-};
-
-export const ensureAdminUser = async (email, password) => {
-  try {
-    console.log('Verificando se o usuário admin existe:', email);
-    const { data: existingUser } = await getUserByEmail(email);
-    
-    if (existingUser) {
-      console.log('Usuário admin já existe, atualizando para função admin');
-      if (existingUser.role !== 'admin') {
-        await updateUserRole(existingUser.id, 'admin');
-      }
-      return { data: existingUser, error: null };
-    }
-    
-    // Neste ponto, o usuário precisa ser criado no Authentication 
-    // e depois adicionado ao Firestore. Como não podemos criar no Firebase Auth
-    // diretamente, esta função apenas retornará um erro neste caso.
-    return { 
-      data: null, 
-      error: 'Usuário admin não encontrado. O usuário precisa ser cadastrado primeiro no sistema de autenticação.'
-    };
-  } catch (error) {
-    console.error('Erro ao garantir usuário admin:', error);
-    return { data: null, error: error.message };
-  }
-};
-
-export const resetAllData = async (userId, securityCode) => {
-  try {
-    console.log('Validando usuário para reset de dados:', userId);
-    const { data: user, error: userError } = await getUserById(userId);
-    
-    if (userError) throw new Error(userError);
-    if (!user) throw new Error('Usuário não encontrado');
-    if (user.role !== 'admin') throw new Error('Apenas administradores podem resetar dados');
-    
-    if (securityCode !== 'CONFIRMO_RESETAR_TODOS_OS_DADOS') {
-      throw new Error('Código de segurança inválido');
-    }
-    
-    console.log('Iniciando processo de reset completo dos dados...');
-    
-    // Excluir todas as suítes de teste
-    const testSuitesRef = collection(db, 'testSuites');
-    const testSuitesSnap = await getDocs(testSuitesRef);
-    console.log(`Excluindo ${testSuitesSnap.size} suítes de teste...`);
-    
-    for (const suiteDoc of testSuitesSnap.docs) {
-      await deleteDoc(doc(db, 'testSuites', suiteDoc.id));
-    }
-    
-    // Excluir todas as execuções de teste
-    const testExecutionsRef = collection(db, 'testExecutions');
-    const testExecutionsSnap = await getDocs(testExecutionsRef);
-    console.log(`Excluindo ${testExecutionsSnap.size} execuções de teste...`);
-    
-    for (const executionDoc of testExecutionsSnap.docs) {
-      await deleteDoc(doc(db, 'testExecutions', executionDoc.id));
-    }
-    
-    // Excluir todos os projetos
-    const projectsRef = collection(db, 'projects');
-    const projectsSnap = await getDocs(projectsRef);
-    console.log(`Excluindo ${projectsSnap.size} projetos...`);
-    
-    for (const projectDoc of projectsSnap.docs) {
-      await deleteDoc(doc(db, 'projects', projectDoc.id));
-    }
-    
-    console.log('Reset de dados concluído com sucesso!');
-    
-    return { 
-      data: { 
-        success: true, 
-        message: 'Todos os dados foram zerados com sucesso',
-        timestamp: new Date().toISOString()
-      }, 
-      error: null 
-    };
-  } catch (error) {
-    console.error('Erro ao resetar dados:', error);
-    return { data: null, error: error.message };
   }
 }; 

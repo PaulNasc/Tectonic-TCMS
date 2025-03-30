@@ -5,7 +5,8 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   updateEmail,
-  updatePassword
+  updatePassword,
+  getAuth
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
@@ -67,9 +68,12 @@ export const getCurrentUser = () => {
 
 export const resetPassword = async (email) => {
   try {
+    const auth = getAuth();
     await sendPasswordResetEmail(auth, email);
+    return { error: null };
   } catch (error) {
-    throw handleAuthError(error);
+    console.error('Erro ao enviar email de recuperação de senha:', error);
+    return { error: error.message || 'Erro ao enviar email de recuperação de senha' };
   }
 };
 

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="60" viewBox="0 0 140 60">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#1E40AF" />
+    </linearGradient>
+    <linearGradient id="gradientAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+  </defs>
+  <g>
+    <circle cx="30" cy="30" r="24" fill="none" stroke="url(#gradient)" stroke-width="3" />
+    <path d="M18 30 L42 30 M30 18 L30 42" stroke="url(#gradient)" stroke-width="3" />
+    <text x="60" y="28" fill="url(#gradient)" font-family="Arial, sans-serif" font-weight="bold" font-size="18">TECTONIC</text>
+    <text x="60" y="45" fill="url(#gradientAccent)" font-family="Arial, sans-serif" font-weight="bold" font-size="14">TCMS</text>
+    <rect x="60" y="32" width="70" height="2" fill="url(#gradientAccent)" />
+  </g>
+</svg> 
