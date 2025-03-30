@@ -37,8 +37,8 @@ Plataforma completa de gerenciamento de casos de testes e ciclos de execução d
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/PaulNasc/CRM-Tectonic-TCMS.git
-cd CRM-Tectonic-TCMS
+git clone https://github.com/PaulNasc/Tectonic-TCMS.git
+cd Tectonic-TCMS
 ```
 
 2. Instale as dependências:
@@ -137,10 +137,10 @@ Para contribuir:
 ```bash
 # Faça um fork do repositório
 # Clone seu fork
-git clone https://github.com/seu-usuario/CRM-Tectonic-TCMS.git
+git clone https://github.com/seu-usuario/Tectonic-TCMS.git
 
 # Adicione o repositório original como upstream
-git remote add upstream https://github.com/PaulNasc/CRM-Tectonic-TCMS.git
+git remote add upstream https://github.com/PaulNasc/Tectonic-TCMS.git
 
 # Crie uma branch para suas alterações
 git checkout -b feature/sua-funcionalidade
@@ -156,7 +156,7 @@ git push origin feature/sua-funcionalidade
 
 ## Repositório
 
-O código-fonte está disponível em: [https://github.com/PaulNasc/CRM-Tectonic-TCMS](https://github.com/PaulNasc/CRM-Tectonic-TCMS)
+O código-fonte está disponível em: [https://github.com/PaulNasc/Tectonic-TCMS](https://github.com/PaulNasc/Tectonic-TCMS)
 
 ## Licença
 
