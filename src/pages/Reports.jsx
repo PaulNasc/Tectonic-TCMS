@@ -1,734 +1,913 @@
 import React, { useState, useEffect } from 'react';
-import styled from '@emotion/styled';
-import { motion } from 'framer-motion';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Card,
-  Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  Divider,
   Paper,
   Button,
+  Divider,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Chip,
+  CircularProgress,
+  Alert,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
   Tabs,
   Tab,
-  Alert,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   TableContainer,
   Table,
   TableHead,
-  TableBody,
   TableRow,
   TableCell,
-  Chip,
+  TableBody,
+  Tooltip,
   IconButton
 } from '@mui/material';
 import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from 'recharts';
-import * as testService from '../services/testService';
+  Assessment as ReportIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
+  Info as InfoIcon,
+  DownloadForOffline as DownloadIcon,
+  ExpandMore as ExpandMoreIcon,
+  Refresh as RefreshIcon,
+  Timeline as TimelineIcon,
+  Security as SecurityIcon,
+  BugReport as BugIcon,
+  CheckCircle as CheckIcon,
+  PriorityHigh as PriorityIcon,
+  Summarize as SummarizeIcon
+} from '@mui/icons-material';
 import { reportService } from '../services/reportService';
 import { projectService } from '../services/projectService';
-import { traceabilityService } from '../services/traceabilityService';
-import { Link } from 'react-router-dom';
-import {
-  Add as AddIcon,
-  Visibility as VisibilityIcon,
-  PictureAsPdf as PictureAsPdfIcon,
-  TableChart as TableChartIcon
-} from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-const Container = styled.div`
-  padding: 24px;
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-`;
-
-const StatsCard = styled(Paper)(({ theme }) => ({
-  padding: '20px',
-  textAlign: 'center',
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-  transition: 'transform 0.3s ease-in-out',
-  '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.15)',
-  },
-}));
-
-const StatValue = styled(Typography)({
-  fontSize: '2.5rem',
-  fontWeight: 'bold',
-  marginBottom: '8px',
-  background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
-  backgroundClip: 'text',
-  WebkitBackgroundClip: 'text',
-  color: 'transparent',
-});
-
-const ChartCard = styled(Card)`
-  padding: 24px;
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  margin-top: 24px;
-`;
-
-const COLORS = ['#00C49F', '#FF8042', '#FFBB28'];
-
+// Componente principal da página de relatórios
 const Reports = () => {
-  const { user } = useAuth();
-  const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState('');
-  const [reports, setReports] = useState([]);
+  const { projectId } = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState(30);
-  const [requirementsCoverage, setRequirementsCoverage] = useState(null);
-  const [activeTab, setActiveTab] = useState(0);
-  const [stats, setStats] = useState({
-    totalTests: 0,
-    executedTests: 0,
-    successRate: 0,
-    statusDistribution: {
-      passed: 0,
-      failed: 0,
-      blocked: 0
-    },
-    executionHistory: []
+  const [projectData, setProjectData] = useState(null);
+  const [reports, setReports] = useState([]);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [error, setError] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [reportOptions, setReportOptions] = useState({
+    includeMetrics: true,
+    includeRiskAnalysis: true,
+    includeCoverageAnalysis: true
   });
+  const [activeTab, setActiveTab] = useState(0);
 
+  // Carregar dados do projeto e relatórios existentes
   useEffect(() => {
-    loadStats();
-  }, [timeRange]);
-
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await projectService.listProjects({ userId: user?.uid });
-        
-        if (error) {
-          console.error('Erro ao carregar projetos:', error);
-          return;
-        }
-        
-        setProjects(data || []);
-      } catch (error) {
-        console.error('Erro ao carregar projetos:', error);
-      } finally {
+    const loadProjectAndReports = async () => {
+      if (!projectId) {
+        setError('ID do projeto não fornecido');
         setLoading(false);
-      }
-    };
-
-    loadProjects();
-  }, [user]);
-
-  useEffect(() => {
-    const loadProjectData = async () => {
-      if (!selectedProject) return;
-      
-      try {
-        setLoading(true);
-        
-        // Carregar relatórios existentes
-        const { data: reportsData, error: reportsError } = await reportService.getReportsByProject(selectedProject);
-        
-        if (reportsError) {
-          console.error('Erro ao carregar relatórios:', reportsError);
-        } else {
-          setReports(reportsData || []);
-        }
-        
-        // Carregar dados de cobertura de requisitos
-        const { data: coverageData, error: coverageError } = await traceabilityService.getRequirementsCoverage(selectedProject);
-        
-        if (coverageError) {
-          console.error('Erro ao carregar dados de cobertura:', coverageError);
-        } else {
-          setRequirementsCoverage(coverageData);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar dados do projeto:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadProjectData();
-  }, [selectedProject]);
-
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await testService.getTestStats(timeRange);
-      if (error) throw error;
-      setStats(data);
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatStatusDistribution = () => {
-    const { passed, failed, blocked } = stats.statusDistribution;
-    return [
-      { name: 'Aprovados', value: passed },
-      { name: 'Falhas', value: failed },
-      { name: 'Bloqueados', value: blocked }
-    ];
-  };
-
-  const handleGenerateReport = async () => {
-    if (!selectedProject) {
-      alert('Selecione um projeto para gerar o relatório');
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const { data, error } = await reportService.generateProjectReport(selectedProject);
-      
-      if (error) {
-        alert(`Erro ao gerar relatório: ${error}`);
         return;
       }
-      
-      // Recarregar a lista de relatórios
-      const { data: reportsData } = await reportService.getReportsByProject(selectedProject);
-      setReports(reportsData || []);
-      
-      alert('Relatório gerado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao gerar relatório:', error);
-      alert(`Erro ao gerar relatório: ${error.message}`);
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Carregar projeto
+        const projectResponse = await projectService.getProjectById(projectId);
+        if (projectResponse.error) {
+          throw new Error(projectResponse.error);
+        }
+        setProjectData(projectResponse.data || projectResponse);
+
+        // Carregar relatórios existentes
+        const reportsResponse = await reportService.getProjectReports(projectId);
+        if (reportsResponse.error) {
+          console.warn('Erro ao carregar relatórios:', reportsResponse.error);
+        } else {
+          setReports(reportsResponse.data || []);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProjectAndReports();
+  }, [projectId]);
+
+  // Função para gerar um novo relatório
+  const handleGenerateReport = async () => {
+    try {
+      setGeneratingReport(true);
+      setError(null);
+
+      const response = await reportService.generateQualityReport(projectId, reportOptions);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      // Adicionar o novo relatório à lista e selecioná-lo
+      setReports(prev => [response.data, ...prev]);
+      setSelectedReport(response.data);
+      setOpenDialog(false);
+    } catch (err) {
+      console.error('Erro ao gerar relatório:', err);
+      setError(`Erro ao gerar relatório: ${err.message}`);
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  // Carregar um relatório específico
+  const handleLoadReport = async (reportId) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await reportService.getReportById(reportId);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      setSelectedReport(response.data);
+    } catch (err) {
+      console.error('Erro ao carregar relatório:', err);
+      setError(`Erro ao carregar relatório: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleProjectChange = (event) => {
-    setSelectedProject(event.target.value);
+  // Renderizar chip de nível de risco
+  const renderRiskLevelChip = (riskLevel) => {
+    const riskMap = {
+      'Crítico': { color: 'error', icon: <ErrorIcon fontSize="small" /> },
+      'Alto': { color: 'warning', icon: <WarningIcon fontSize="small" /> },
+      'Médio': { color: 'info', icon: <InfoIcon fontSize="small" /> },
+      'Baixo': { color: 'success', icon: <CheckIcon fontSize="small" /> },
+      'Indefinido': { color: 'default', icon: <InfoIcon fontSize="small" /> }
+    };
+
+    const riskInfo = riskMap[riskLevel] || riskMap['Indefinido'];
+
+    return (
+      <Chip
+        label={riskLevel}
+        color={riskInfo.color}
+        size="small"
+        icon={riskInfo.icon}
+      />
+    );
   };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+  // Renderizar chip de tipo de recomendação
+  const renderRecommendationTypeChip = (type) => {
+    const typeMap = {
+      'critical': { color: 'error', icon: <ErrorIcon fontSize="small" />, label: 'Crítica' },
+      'high': { color: 'warning', icon: <WarningIcon fontSize="small" />, label: 'Alta' },
+      'medium': { color: 'info', icon: <InfoIcon fontSize="small" />, label: 'Média' },
+      'low': { color: 'default', icon: <InfoIcon fontSize="small" />, label: 'Baixa' }
+    };
+
+    const typeInfo = typeMap[type] || typeMap['low'];
+
+    return (
+      <Chip
+        label={typeInfo.label}
+        color={typeInfo.color}
+        size="small"
+        icon={typeInfo.icon}
+      />
+    );
   };
 
+  // Renderizar icon para área de recomendação
+  const renderAreaIcon = (area) => {
+    const areaMap = {
+      'coverage': <TimelineIcon />,
+      'execution': <BugIcon />,
+      'automation': <RefreshIcon />,
+      'security': <SecurityIcon />
+    };
+
+    return areaMap[area] || <InfoIcon />;
+  };
+
+  // Formatar data
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Estado de carregamento
   if (loading) {
     return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '100vh' 
-        }}
-      >
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 3 }}>
         <CircularProgress />
+        <Typography variant="body2" sx={{ mt: 2 }}>
+          Carregando dados dos relatórios...
+        </Typography>
       </Box>
     );
   }
 
-  return (
-    <Container>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Header>
-          <Typography variant="h4">
-            Relatórios e Análises
-          </Typography>
-          <FormControl 
-            sx={{ 
-              minWidth: 200,
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                  borderColor: 'var(--border-color)',
+  // Estado de erro
+  if (error && !selectedReport && reports.length === 0) {
+    return (
+      <Alert severity="error" sx={{ m: 3 }}>
+        {error}
+      </Alert>
+    );
+  }
+
+  // Componente de header
+  const ReportHeader = () => (
+    <Box sx={{ mb: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5" component="h1">
+          Relatórios de Qualidade
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<ReportIcon />}
+          onClick={() => setOpenDialog(true)}
+        >
+          Gerar Novo Relatório
+        </Button>
+      </Box>
+
+      <Typography variant="body2" color="text.secondary">
+        {projectData?.name && `Projeto: ${projectData.name}`}
+      </Typography>
+
+      <Divider sx={{ my: 2 }} />
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+    </Box>
+  );
+
+  // Componente de diálogo para gerar relatório
+  const GenerateReportDialog = () => (
+    <Dialog
+      open={openDialog}
+      onClose={() => setOpenDialog(false)}
+      aria-labelledby="report-dialog-title"
+    >
+      <DialogTitle id="report-dialog-title">
+        Gerar Novo Relatório de Qualidade
+      </DialogTitle>
+
+      <DialogContent>
+        <DialogContentText sx={{ mb: 2 }}>
+          Configure as opções para o relatório de qualidade do projeto.
+        </DialogContentText>
+
+        <FormGroup>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={reportOptions.includeMetrics}
+                onChange={(e) => setReportOptions({ ...reportOptions, includeMetrics: e.target.checked })}
+              />
+            }
+            label="Incluir métricas detalhadas"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={reportOptions.includeRiskAnalysis}
+                onChange={(e) => setReportOptions({ ...reportOptions, includeRiskAnalysis: e.target.checked })}
+              />
+            }
+            label="Incluir análise de risco"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={reportOptions.includeCoverageAnalysis}
+                onChange={(e) => setReportOptions({ ...reportOptions, includeCoverageAnalysis: e.target.checked })}
+              />
+            }
+            label="Incluir análise de cobertura"
+          />
+        </FormGroup>
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={() => setOpenDialog(false)} disabled={generatingReport}>
+          Cancelar
+        </Button>
+        <Button
+          onClick={handleGenerateReport}
+          variant="contained"
+          disabled={generatingReport}
+          startIcon={generatingReport ? <CircularProgress size={20} /> : <ReportIcon />}
+        >
+          {generatingReport ? 'Gerando...' : 'Gerar Relatório'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  // Componente de lista de relatórios
+  const ReportsList = () => (
+    <Grid container spacing={2}>
+      {reports.length === 0 ? (
+        <Grid item xs={12}>
+          <Alert severity="info">
+            Nenhum relatório encontrado para este projeto. Gere um novo relatório para começar.
+          </Alert>
+        </Grid>
+      ) : (
+        reports.map((report) => (
+          <Grid item xs={12} sm={6} md={4} key={report.id || report.generatedAt}>
+            <Card 
+              sx={{ 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 4
                 },
-                '&:hover fieldset': {
-                  borderColor: 'var(--neon-primary)',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: 'var(--neon-primary)',
-                },
-              },
-              '& .MuiInputLabel-root': {
-                color: 'var(--text-secondary)',
-                '&.Mui-focused': {
-                  color: 'var(--neon-primary)',
-                },
-              },
-              '& .MuiSelect-select': {
-                color: 'var(--text-primary)',
-              },
-            }}
-          >
-            <InputLabel>Período</InputLabel>
-            <Select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              label="Período"
+                bgcolor: selectedReport?.id === report.id ? 'action.selected' : 'background.paper'
+              }}
+              onClick={() => setSelectedReport(report)}
             >
-              <MenuItem value={7}>Última Semana</MenuItem>
-              <MenuItem value={30}>Último Mês</MenuItem>
-              <MenuItem value={90}>Último Trimestre</MenuItem>
-            </Select>
-          </FormControl>
-        </Header>
-
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <StatsCard>
-              <Typography variant="h6" color="var(--text-primary)">
-                Total de Testes
-              </Typography>
-              <StatValue>
-                {stats.totalTests}
-              </StatValue>
-              <Typography variant="body2" color="var(--text-secondary)">
-                Casos de teste cadastrados
-              </Typography>
-            </StatsCard>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <StatsCard>
-              <Typography variant="h6" color="var(--text-primary)">
-                Testes Executados
-              </Typography>
-              <StatValue>
-                {stats.executedTests}
-              </StatValue>
-              <Typography variant="body2" color="var(--text-secondary)">
-                No período selecionado
-              </Typography>
-            </StatsCard>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <StatsCard>
-              <Typography variant="h6" color="var(--text-primary)">
-                Taxa de Sucesso
-              </Typography>
-              <StatValue>
-                {stats.successRate.toFixed(1)}%
-              </StatValue>
-              <Typography variant="body2" color="var(--text-secondary)">
-                Testes aprovados / executados
-              </Typography>
-            </StatsCard>
-          </Grid>
-        </Grid>
-
-        <Grid container spacing={3} sx={{ mt: 1 }}>
-          <Grid item xs={12} md={6}>
-            <ChartCard>
-              <Typography variant="h6" gutterBottom color="var(--text-primary)">
-                Distribuição de Status
-              </Typography>
-              <Divider sx={{ borderColor: 'var(--border-color)', mb: 3 }} />
-              <Box sx={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie
-                      data={formatStatusDistribution()}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      paddingAngle={5}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                    >
-                      {formatStatusDistribution().map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Box>
-            </ChartCard>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <ChartCard>
-              <Typography variant="h6" gutterBottom color="var(--text-primary)">
-                Histórico de Execuções
-              </Typography>
-              <Divider sx={{ borderColor: 'var(--border-color)', mb: 3 }} />
-              <Box sx={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
-                  <BarChart
-                    data={stats.executionHistory}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="var(--text-secondary)"
-                      tick={{ fill: 'var(--text-secondary)' }}
-                    />
-                    <YAxis 
-                      stroke="var(--text-secondary)"
-                      tick={{ fill: 'var(--text-secondary)' }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'var(--card-bg)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '4px'
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="passed" name="Aprovados" fill={COLORS[0]} />
-                    <Bar dataKey="failed" name="Falhas" fill={COLORS[1]} />
-                    <Bar dataKey="blocked" name="Bloqueados" fill={COLORS[2]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            </ChartCard>
-          </Grid>
-        </Grid>
-
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Seleção de Projeto
-          </Typography>
-          
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel id="project-select-label">Projeto</InputLabel>
-                <Select
-                  labelId="project-select-label"
-                  id="project-select"
-                  value={selectedProject}
-                  label="Projeto"
-                  onChange={handleProjectChange}
-                >
-                  <MenuItem value="">
-                    <em>Selecione um projeto</em>
-                  </MenuItem>
-                  {projects.map((project) => (
-                    <MenuItem key={project.id} value={project.id}>
-                      {project.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Button
-                variant="contained"
-                color="primary"
-                disabled={!selectedProject || loading}
-                onClick={handleGenerateReport}
-                startIcon={<AddIcon />}
-              >
-                Gerar Novo Relatório
-              </Button>
-            </Grid>
-          </Grid>
-        </Paper>
-
-        {selectedProject ? (
-          loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Box>
-              <Tabs
-                value={activeTab}
-                onChange={handleTabChange}
-                sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
-              >
-                <Tab label="Dashboard de Cobertura" />
-                <Tab label="Relatórios Gerados" />
-              </Tabs>
-
-              {activeTab === 0 && (
-                <Box>
-                  {requirementsCoverage ? (
-                    <>
-                      <Typography variant="h5" sx={{ mb: 3 }}>
-                        Dashboard de Cobertura de Requisitos
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  <ReportIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  Relatório de Qualidade
+                </Typography>
+                
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Gerado em: {formatDate(report.generatedAt)}
+                </Typography>
+                
+                <Box sx={{ mt: 2 }}>
+                  {report.riskAnalysis?.riskLevel && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="body2" sx={{ mr: 1 }}>
+                        Nível de risco:
                       </Typography>
-
-                      <Grid container spacing={3} sx={{ mb: 4 }}>
-                        <Grid item xs={12} sm={6} md={3}>
-                          <StatsCard>
-                            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                              Total de Requisitos
-                            </Typography>
-                            <StatValue variant="h3">
-                              {requirementsCoverage.totalRequirements}
-                            </StatValue>
-                          </StatsCard>
-                        </Grid>
-                        
-                        <Grid item xs={12} sm={6} md={3}>
-                          <StatsCard>
-                            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                              Requisitos Cobertos
-                            </Typography>
-                            <StatValue variant="h3">
-                              {requirementsCoverage.coveredRequirements}
-                            </StatValue>
-                            <Typography variant="body2" color="text.secondary">
-                              {Math.round(requirementsCoverage.coveragePercent)}% do total
-                            </Typography>
-                          </StatsCard>
-                        </Grid>
-                        
-                        <Grid item xs={12} sm={6} md={3}>
-                          <StatsCard>
-                            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                              Taxa de Aprovação
-                            </Typography>
-                            <StatValue variant="h3">
-                              {Math.round(requirementsCoverage.passRate)}%
-                            </StatValue>
-                            <Typography variant="body2" color="text.secondary">
-                              Requisitos com testes aprovados
-                            </Typography>
-                          </StatsCard>
-                        </Grid>
-                        
-                        <Grid item xs={12} sm={6} md={3}>
-                          <StatsCard>
-                            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                              Requisitos sem Cobertura
-                            </Typography>
-                            <StatValue variant="h3">
-                              {requirementsCoverage.totalRequirements - requirementsCoverage.coveredRequirements}
-                            </StatValue>
-                            <Typography variant="body2" color="text.secondary">
-                              Necessitam de testes
-                            </Typography>
-                          </StatsCard>
-                        </Grid>
-                      </Grid>
-
-                      {requirementsCoverage.priorityCoverage && (
-                        <Paper sx={{ p: 3, mb: 4 }}>
-                          <Typography variant="h6" gutterBottom>
-                            Cobertura por Prioridade
-                          </Typography>
-                          
-                          <TableContainer>
-                            <Table>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>Prioridade</TableCell>
-                                  <TableCell>Total</TableCell>
-                                  <TableCell>Cobertos</TableCell>
-                                  <TableCell>% Cobertura</TableCell>
-                                  <TableCell>Aprovados</TableCell>
-                                  <TableCell>% Aprovação</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {Object.entries(requirementsCoverage.priorityCoverage).map(([priority, data]) => (
-                                  <TableRow key={priority}>
-                                    <TableCell>{priority}</TableCell>
-                                    <TableCell>{data.total}</TableCell>
-                                    <TableCell>{data.covered}</TableCell>
-                                    <TableCell>
-                                      <Chip 
-                                        label={`${Math.round(data.coveragePercent)}%`}
-                                        color={
-                                          data.coveragePercent >= 80 ? 'success' :
-                                          data.coveragePercent >= 50 ? 'info' :
-                                          data.coveragePercent >= 30 ? 'warning' : 'error'
-                                        }
-                                        size="small"
-                                      />
-                                    </TableCell>
-                                    <TableCell>{data.passed}</TableCell>
-                                    <TableCell>
-                                      <Chip 
-                                        label={`${Math.round(data.passPercent)}%`}
-                                        color={
-                                          data.passPercent >= 80 ? 'success' :
-                                          data.passPercent >= 50 ? 'info' :
-                                          data.passPercent >= 30 ? 'warning' : 'error'
-                                        }
-                                        size="small"
-                                      />
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        </Paper>
-                      )}
-
-                      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          component={Link}
-                          to={`/projects/${selectedProject}/requirements`}
-                        >
-                          Ver Dashboard Completo de Cobertura
-                        </Button>
-                      </Box>
-                    </>
-                  ) : (
-                    <Alert severity="info">
-                      Não há dados de cobertura de requisitos disponíveis para este projeto. Adicione requisitos e vincule casos de teste para visualizar estatísticas de cobertura.
-                    </Alert>
+                      {renderRiskLevelChip(report.riskAnalysis.riskLevel)}
+                    </Box>
+                  )}
+                  
+                  {report.summary?.coveragePercentage !== undefined && (
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography variant="body2" sx={{ mr: 1 }}>
+                        Cobertura:
+                      </Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {Math.round(report.summary.coveragePercentage)}%
+                      </Typography>
+                    </Box>
                   )}
                 </Box>
-              )}
+              </CardContent>
+              
+              <CardActions>
+                <Button 
+                  size="small" 
+                  startIcon={<InfoIcon />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedReport(report);
+                  }}
+                >
+                  Detalhes
+                </Button>
+                <Button 
+                  size="small" 
+                  startIcon={<DownloadIcon />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    alert('Funcionalidade de download será implementada em breve');
+                  }}
+                >
+                  Download
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))
+      )}
+    </Grid>
+  );
 
-              {activeTab === 1 && (
-                <Box>
-                  <Typography variant="h5" sx={{ mb: 3 }}>
-                    Relatórios Gerados
+  // Componente de visualização de relatório
+  const ReportViewer = () => {
+    if (!selectedReport) {
+      return (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          Selecione um relatório da lista para visualizar seus detalhes.
+        </Alert>
+      );
+    }
+
+    return (
+      <Box>
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+            <Typography variant="h6">
+              <ReportIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
+              Relatório de Qualidade
+            </Typography>
+            
+            <Box>
+              <Button 
+                startIcon={<DownloadIcon />}
+                variant="outlined"
+                sx={{ mr: 1 }}
+                onClick={() => alert('Funcionalidade de download será implementada em breve')}
+              >
+                Download PDF
+              </Button>
+            </Box>
+          </Box>
+          
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Gerado em: {formatDate(selectedReport.generatedAt)}
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary">
+            Projeto: {selectedReport.projectName || projectData?.name}
+          </Typography>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Tabs
+            value={activeTab}
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{ mb: 2 }}
+          >
+            <Tab label="Sumário" icon={<SummarizeIcon />} iconPosition="start" />
+            <Tab 
+              label="Métricas" 
+              icon={<TimelineIcon />} 
+              iconPosition="start" 
+              disabled={!selectedReport.metrics?.requirements}
+            />
+            <Tab 
+              label="Análise de Risco" 
+              icon={<SecurityIcon />} 
+              iconPosition="start" 
+              disabled={!selectedReport.riskAnalysis?.riskLevel}
+            />
+            <Tab 
+              label="Recomendações" 
+              icon={<InfoIcon />} 
+              iconPosition="start" 
+              disabled={!selectedReport.recommendations?.length}
+            />
+          </Tabs>
+
+          {/* Tab de Sumário */}
+          {activeTab === 0 && (
+            <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Visão Geral
                   </Typography>
+                  
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" gutterBottom>
+                      <strong>Nível de Risco:</strong> {selectedReport.riskAnalysis?.riskLevel || 'Não avaliado'}
+                      {selectedReport.riskAnalysis?.riskLevel && (
+                        <Box component="span" sx={{ ml: 1 }}>
+                          {renderRiskLevelChip(selectedReport.riskAnalysis.riskLevel)}
+                        </Box>
+                      )}
+                    </Typography>
+                    
+                    {selectedReport.metrics?.overallQualityScore !== undefined && (
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Pontuação de Qualidade:</strong> {selectedReport.metrics.overallQualityScore.toFixed(1)}/5
+                      </Typography>
+                    )}
+                  </Box>
+                  
+                  <Typography variant="subtitle1" gutterBottom>
+                    Requisitos
+                  </Typography>
+                  
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" gutterBottom>
+                      <strong>Total de Requisitos:</strong> {selectedReport.summary?.totalRequirements || 0}
+                    </Typography>
+                    
+                    <Typography variant="body2" gutterBottom>
+                      <strong>Requisitos Cobertos:</strong> {selectedReport.summary?.coveredRequirements || 0} 
+                      ({Math.round(selectedReport.summary?.coveragePercentage || 0)}%)
+                    </Typography>
+                    
+                    <Typography variant="body2" gutterBottom>
+                      <strong>Requisitos Aprovados:</strong> {selectedReport.summary?.passedRequirements || 0}
+                      ({Math.round(selectedReport.summary?.passRate || 0)}%)
+                    </Typography>
+                    
+                    {selectedReport.riskAnalysis?.criticalUncoveredCount !== undefined && (
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Requisitos Críticos sem Cobertura:</strong> {selectedReport.riskAnalysis.criticalUncoveredCount}
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Testes
+                  </Typography>
+                  
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" gutterBottom>
+                      <strong>Total de Casos de Teste:</strong> {selectedReport.summary?.totalTestCases || 0}
+                    </Typography>
+                    
+                    <Typography variant="body2" gutterBottom>
+                      <strong>Testes Automatizados:</strong> {selectedReport.summary?.automatedTestCases || 0} 
+                      ({Math.round(selectedReport.summary?.automationRate || 0)}%)
+                    </Typography>
+                    
+                    {selectedReport.metrics?.testing?.executed !== undefined && (
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Testes Executados:</strong> {selectedReport.metrics.testing.executed} 
+                        ({Math.round(selectedReport.metrics.testing.executionRate || 0)}%)
+                      </Typography>
+                    )}
+                    
+                    {selectedReport.metrics?.testing?.passed !== undefined && (
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Testes Aprovados:</strong> {selectedReport.metrics.testing.passed} 
+                        ({Math.round(selectedReport.metrics.testing.passRate || 0)}%)
+                      </Typography>
+                    )}
+                  </Box>
+                  
+                  {selectedReport.recommendations?.length > 0 && (
+                    <>
+                      <Typography variant="subtitle1" gutterBottom>
+                        Principais Recomendações
+                      </Typography>
+                      
+                      <List dense>
+                        {selectedReport.recommendations.slice(0, 3).map((rec, index) => (
+                          <ListItem key={index}>
+                            <ListItemIcon>
+                              {renderAreaIcon(rec.area)}
+                            </ListItemIcon>
+                            <ListItemText 
+                              primary={rec.message}
+                              secondary={renderRecommendationTypeChip(rec.type)}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </>
+                  )}
+                </Grid>
+              </Grid>
+            </Box>
+          )}
 
-                  {reports.length === 0 ? (
-                    <Alert severity="info">
-                      Não há relatórios gerados para este projeto. Utilize o botão "Gerar Novo Relatório" para criar um relatório completo.
-                    </Alert>
-                  ) : (
-                    <TableContainer component={Paper}>
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>Data de Geração</TableCell>
-                            <TableCell>Cobertura de Requisitos</TableCell>
-                            <TableCell>Nível de Risco</TableCell>
-                            <TableCell>Requisitos Críticos</TableCell>
-                            <TableCell>Ações</TableCell>
-                          </TableRow>
-                        </TableHead>
+          {/* Tab de Métricas */}
+          {activeTab === 1 && selectedReport.metrics?.requirements && (
+            <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2 }} variant="outlined">
+                    <Typography variant="subtitle1" gutterBottom>
+                      Métricas de Requisitos
+                    </Typography>
+                    
+                    <TableContainer>
+                      <Table size="small">
                         <TableBody>
-                          {reports.map((report) => (
-                            <TableRow key={report.id}>
-                              <TableCell>
-                                {new Date(report.generatedAt).toLocaleString('pt-BR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </TableCell>
-                              <TableCell>
-                                {report.requirementsCoverage ? (
-                                  <Chip 
-                                    label={`${Math.round(report.requirementsCoverage.coveragePercent)}%`}
-                                    color={
-                                      report.requirementsCoverage.coveragePercent >= 80 ? 'success' :
-                                      report.requirementsCoverage.coveragePercent >= 50 ? 'info' :
-                                      report.requirementsCoverage.coveragePercent >= 30 ? 'warning' : 'error'
-                                    }
-                                    size="small"
-                                  />
-                                ) : (
-                                  'N/A'
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Chip 
-                                  label={report.insights?.risk?.level || 'Indefinido'}
-                                  color={
-                                    report.insights?.risk?.level === 'Crítico' ? 'error' :
-                                    report.insights?.risk?.level === 'Alto' ? 'warning' :
-                                    report.insights?.risk?.level === 'Médio' ? 'info' : 'success'
-                                  }
-                                  size="small"
-                                />
-                              </TableCell>
-                              <TableCell>
-                                {report.insights?.requirements?.criticalWithFailures?.length || 0}
-                              </TableCell>
-                              <TableCell>
-                                <IconButton 
-                                  size="small" 
-                                  color="primary"
-                                  onClick={() => {
-                                    // Implementar visualização do relatório
-                                    alert('Visualização do relatório não implementada');
-                                  }}
-                                >
-                                  <VisibilityIcon fontSize="small" />
-                                </IconButton>
-                                <IconButton 
-                                  size="small" 
-                                  color="primary"
-                                  onClick={() => {
-                                    // Implementar download do relatório em PDF
-                                    alert('Download do relatório em PDF não implementado');
-                                  }}
-                                >
-                                  <PictureAsPdfIcon fontSize="small" />
-                                </IconButton>
-                                <IconButton 
-                                  size="small" 
-                                  color="primary"
-                                  onClick={() => {
-                                    // Implementar download do relatório em Excel
-                                    alert('Download do relatório em Excel não implementado');
-                                  }}
-                                >
-                                  <TableChartIcon fontSize="small" />
-                                </IconButton>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                          <TableRow>
+                            <TableCell>Total de Requisitos</TableCell>
+                            <TableCell align="right">{selectedReport.metrics.requirements.total}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Requisitos Cobertos</TableCell>
+                            <TableCell align="right">
+                              {selectedReport.metrics.requirements.covered} 
+                              ({Math.round(selectedReport.metrics.requirements.coveragePercent)}%)
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Requisitos Sem Cobertura</TableCell>
+                            <TableCell align="right">{selectedReport.metrics.requirements.uncovered}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Pontuação de Qualidade</TableCell>
+                            <TableCell align="right">{selectedReport.metrics.requirements.qualityScore.toFixed(1)}/5</TableCell>
+                          </TableRow>
                         </TableBody>
                       </Table>
                     </TableContainer>
-                  )}
-                </Box>
-              )}
+                    
+                    {selectedReport.metrics.requirements.priorityCoverage && (
+                      <>
+                        <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                          Cobertura por Prioridade
+                        </Typography>
+                        
+                        <TableContainer>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>Prioridade</TableCell>
+                                <TableCell align="right">Total</TableCell>
+                                <TableCell align="right">Cobertos</TableCell>
+                                <TableCell align="right">Cobertura</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {Object.entries(selectedReport.metrics.requirements.priorityCoverage).map(([priority, data]) => (
+                                <TableRow key={priority}>
+                                  <TableCell>{priority}</TableCell>
+                                  <TableCell align="right">{data.total}</TableCell>
+                                  <TableCell align="right">{data.covered}</TableCell>
+                                  <TableCell align="right">{Math.round(data.coveragePercent)}%</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </>
+                    )}
+                  </Paper>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2 }} variant="outlined">
+                    <Typography variant="subtitle1" gutterBottom>
+                      Métricas de Teste
+                    </Typography>
+                    
+                    <TableContainer>
+                      <Table size="small">
+                        <TableBody>
+                          <TableRow>
+                            <TableCell>Total de Testes</TableCell>
+                            <TableCell align="right">{selectedReport.metrics.testing.total}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Testes Executados</TableCell>
+                            <TableCell align="right">
+                              {selectedReport.metrics.testing.executed} 
+                              ({Math.round(selectedReport.metrics.testing.executionRate)}%)
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Testes Aprovados</TableCell>
+                            <TableCell align="right">
+                              {selectedReport.metrics.testing.passed} 
+                              ({Math.round(selectedReport.metrics.testing.passRate)}%)
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Testes Automatizados</TableCell>
+                            <TableCell align="right">
+                              {selectedReport.metrics.automation.automated} 
+                              ({Math.round(selectedReport.metrics.automation.automationRate)}%)
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Pontuação de Execução</TableCell>
+                            <TableCell align="right">{selectedReport.metrics.testing.qualityScore.toFixed(1)}/5</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Pontuação de Automação</TableCell>
+                            <TableCell align="right">{selectedReport.metrics.automation.qualityScore.toFixed(1)}/5</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Paper>
+                  
+                  <Paper sx={{ p: 2, mt: 2 }} variant="outlined">
+                    <Typography variant="subtitle1" gutterBottom>
+                      Pontuação Geral de Qualidade
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+                      <Box sx={{ 
+                        width: 120, 
+                        height: 120, 
+                        borderRadius: '50%', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        bgcolor: 'background.default',
+                        border: '8px solid',
+                        borderColor: 
+                          selectedReport.metrics.overallQualityScore >= 4 ? 'success.main' :
+                          selectedReport.metrics.overallQualityScore >= 3 ? 'info.main' :
+                          selectedReport.metrics.overallQualityScore >= 2 ? 'warning.main' :
+                          'error.main'
+                      }}>
+                        <Typography variant="h3" fontWeight="bold">
+                          {selectedReport.metrics.overallQualityScore.toFixed(1)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    
+                    <Typography variant="body2" textAlign="center" color="text.secondary" sx={{ mt: 1 }}>
+                      {selectedReport.metrics.overallQualityScore >= 4.5 ? 'Excelente' : 
+                       selectedReport.metrics.overallQualityScore >= 3.5 ? 'Bom' : 
+                       selectedReport.metrics.overallQualityScore >= 2.5 ? 'Regular' : 
+                       selectedReport.metrics.overallQualityScore >= 1.5 ? 'Insuficiente' : 'Crítico'}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
             </Box>
-          )
+          )}
+
+          {/* Tab de Análise de Risco */}
+          {activeTab === 2 && selectedReport.riskAnalysis?.riskLevel && (
+            <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2 }} variant="outlined">
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <SecurityIcon sx={{ mr: 1, color: 
+                        selectedReport.riskAnalysis.riskLevel === 'Crítico' ? 'error.main' :
+                        selectedReport.riskAnalysis.riskLevel === 'Alto' ? 'warning.main' :
+                        selectedReport.riskAnalysis.riskLevel === 'Médio' ? 'info.main' :
+                        'success.main'
+                      }} />
+                      <Typography variant="subtitle1">
+                        Nível de Risco: {selectedReport.riskAnalysis.riskLevel}
+                      </Typography>
+                    </Box>
+                    
+                    <Typography variant="body2" gutterBottom>
+                      Requisitos críticos sem cobertura: {selectedReport.riskAnalysis.criticalUncoveredCount}
+                    </Typography>
+                    
+                    <Typography variant="body2" gutterBottom>
+                      Requisitos críticos com falhas: {selectedReport.riskAnalysis.criticalFailingCount}
+                    </Typography>
+                  </Paper>
+                  
+                  {selectedReport.riskAnalysis.criticalUncovered?.length > 0 && (
+                    <Paper sx={{ p: 2, mt: 2 }} variant="outlined">
+                      <Typography variant="subtitle2" gutterBottom>
+                        Requisitos Críticos sem Cobertura
+                      </Typography>
+                      
+                      <List dense>
+                        {selectedReport.riskAnalysis.criticalUncovered.map((req) => (
+                          <ListItem key={req.id}>
+                            <ListItemIcon>
+                              <PriorityIcon color="error" />
+                            </ListItemIcon>
+                            <ListItemText 
+                              primary={req.name}
+                              secondary={`Prioridade: ${req.priority}`}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  )}
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  {selectedReport.riskAnalysis.criticalFailing?.length > 0 && (
+                    <Paper sx={{ p: 2 }} variant="outlined">
+                      <Typography variant="subtitle2" gutterBottom>
+                        Requisitos Críticos com Falhas
+                      </Typography>
+                      
+                      <List dense>
+                        {selectedReport.riskAnalysis.criticalFailing.map((req) => (
+                          <Accordion key={req.id} disableGutters elevation={0} sx={{ border: '1px solid', borderColor: 'divider', mb: 1 }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                              <Typography variant="body2">{req.name}</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                Prioridade: {req.priority}
+                              </Typography>
+                              
+                              <Typography variant="body2" fontWeight="medium" sx={{ mt: 1 }}>
+                                Testes Falhando:
+                              </Typography>
+                              
+                              <List dense>
+                                {req.failingTests.map((test) => (
+                                  <ListItem key={test.id} dense>
+                                    <ListItemIcon>
+                                      <BugIcon fontSize="small" color="error" />
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                      primary={test.name}
+                                    />
+                                  </ListItem>
+                                ))}
+                              </List>
+                            </AccordionDetails>
+                          </Accordion>
+                        ))}
+                      </List>
+                    </Paper>
+                  )}
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {/* Tab de Recomendações */}
+          {activeTab === 3 && selectedReport.recommendations?.length > 0 && (
+            <Box>
+              <List>
+                {selectedReport.recommendations.map((rec, index) => (
+                  <Paper key={index} variant="outlined" sx={{ mb: 2, overflow: 'hidden' }}>
+                    <ListItem
+                      secondaryAction={renderRecommendationTypeChip(rec.type)}
+                    >
+                      <ListItemIcon>
+                        {renderAreaIcon(rec.area)}
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary={rec.message}
+                        secondary={rec.details}
+                      />
+                    </ListItem>
+                  </Paper>
+                ))}
+              </List>
+            </Box>
+          )}
+        </Paper>
+      </Box>
+    );
+  };
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <ReportHeader />
+      
+      <Grid container spacing={3}>
+        {!selectedReport ? (
+          <Grid item xs={12}>
+            <ReportsList />
+          </Grid>
         ) : (
-          <Alert severity="info" sx={{ mt: 3 }}>
-            Selecione um projeto para visualizar relatórios e estatísticas de cobertura.
-          </Alert>
+          <>
+            <Grid item xs={12} md={4}>
+              <Typography variant="subtitle1" gutterBottom>
+                Relatórios Disponíveis
+              </Typography>
+              <ReportsList />
+            </Grid>
+            
+            <Grid item xs={12} md={8}>
+              <ReportViewer />
+            </Grid>
+          </>
         )}
-      </motion.div>
-    </Container>
+      </Grid>
+      
+      <GenerateReportDialog />
+    </Box>
   );
 };
 

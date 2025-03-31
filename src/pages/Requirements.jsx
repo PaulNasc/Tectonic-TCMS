@@ -121,13 +121,23 @@ const Requirements = () => {
         
         // Carregar requisitos
         const requirementsResponse = await traceabilityService.getRequirementsByProject(projectId);
-        setRequirements(requirementsResponse || []);
+        if (requirementsResponse.error) {
+          console.error('Erro ao carregar requisitos:', requirementsResponse.error);
+          setError(`Erro ao carregar requisitos: ${requirementsResponse.error}`);
+        } else {
+          setRequirements(requirementsResponse.data || []);
+        }
         
         // Carregar configurações aplicáveis
-        const configs = await configService.getApplicableConfigs('priority', projectId);
-        setConfigurations({
-          priorities: configs || []
-        });
+        const configsResponse = await configService.getApplicableConfigs('priority', projectId);
+        if (configsResponse.error) {
+          console.error('Erro ao carregar configurações:', configsResponse.error);
+          // Não bloqueamos a UI por causa de erro nas configurações
+        } else {
+          setConfigurations({
+            priorities: configsResponse.data || []
+          });
+        }
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
         setError(err.message);

@@ -47,6 +47,7 @@ import { testSuiteService } from '../services/testSuiteService';
 import { useAuth } from '../contexts/AuthContext';
 import RequirementsTraceabilityMatrix from '../components/test/RequirementsTraceabilityMatrix';
 import TestPermissionManager from '../components/test/TestPermissionManager';
+import QualityDashboard from '../components/QualityDashboard';
 
 const TabPanel = (props) => {
   const { children, value, index, ...other } = props;
@@ -76,7 +77,7 @@ const ProjectView = () => {
   const [suites, setSuites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState('testSuite');
   const [createSuiteDialog, setCreateSuiteDialog] = useState(false);
   const [newSuite, setNewSuite] = useState({ name: '', description: '' });
   const [anchorEl, setAnchorEl] = useState(null);
@@ -350,8 +351,8 @@ const ProjectView = () => {
             <Tabs value={tabValue} onChange={handleTabChange} aria-label="project tabs" variant="scrollable" scrollButtons="auto">
               <Tab label="Suítes de Teste" {...a11yProps(0)} />
               <Tab label="Matriz de Rastreabilidade" {...a11yProps(1)} />
-              <Tab label="Permissões" {...a11yProps(2)} />
-              <Tab label="Estatísticas" {...a11yProps(3)} />
+              <Tab label="Dashboard de Qualidade" {...a11yProps(2)} />
+              <Tab label="Permissões" {...a11yProps(3)} />
             </Tabs>
           </Box>
 
@@ -446,12 +447,11 @@ const ProjectView = () => {
             </TabPanel>
 
             <TabPanel value={tabValue} index={2}>
-              <TestPermissionManager projectId={id} />
+              <QualityDashboard projectId={project.id} />
             </TabPanel>
 
             <TabPanel value={tabValue} index={3}>
-              {/* Estatísticas do projeto */}
-              {/* ... */}
+              <TestPermissionManager projectId={id} />
             </TabPanel>
           </Box>
 

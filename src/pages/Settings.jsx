@@ -688,7 +688,7 @@ const Settings = () => {
                 variant="outlined" 
                 size="small"
                 component="a"
-                href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=Coleção:requirements,Campo:projectId,Tipo:ascending,Campo:createdAt,Tipo:descending"
+                href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=ClBwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcmVxdWlyZW1lbnRzL2luZGV4ZXMvXxABGg0KCXByb2plY3RJZBABGg0KCWNyZWF0ZWRBdBACGgwKCF9fbmFtZV9fEAI"
                 target="_blank"
                 rel="noopener"
               >
@@ -726,7 +726,7 @@ const Settings = () => {
                 variant="outlined" 
                 size="small"
                 component="a"
-                href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=Coleção:configurations,Campo:type,Tipo:ascending,Campo:projectId,Tipo:ascending,Campo:order,Tipo:ascending"
+                href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=ClJwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvY29uZmlndXJhdGlvbnMvaW5kZXhlcy9fEAEaDQoJcHJvamVjdElkEAEaCAoEdHlwZRABGgkKBW9yZGVyEAEaDAoIX19uYW1lX18QAQ"
                 target="_blank"
                 rel="noopener"
               >

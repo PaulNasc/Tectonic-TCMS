@@ -17,53 +17,41 @@ const CONFIG_COLLECTION = 'configurations';
 
 export const configService = {
   // Obter configurações aplicáveis a um elemento (globais + específicas do projeto)
-  async getApplicableConfigs(type, projectId = null) {
+  async getApplicableConfigs(type, projectId) {
     try {
-      // Buscar configurações globais
-      const globalQ = query(
-        collection(db, CONFIG_COLLECTION),
-        where('type', '==', type),
-        where('isGlobal', '==', true),
-        orderBy('order', 'asc')
-      );
-      
-      const globalSnapshot = await getDocs(globalQ);
-      const globalConfigs = globalSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      // Se não houver projectId, retornar apenas configurações globais
-      if (!projectId) {
-        return { data: globalConfigs, error: null };
+      // Verificar se tipo foi fornecido
+      if (!type) {
+        throw new Error('Tipo de configuração é obrigatório');
       }
       
-      // Buscar configurações específicas do projeto
-      const projectQ = query(
-        collection(db, CONFIG_COLLECTION),
-        where('type', '==', type),
-        where('projectId', '==', projectId),
-        orderBy('order', 'asc')
-      );
+      let configsQuery;
       
-      const projectSnapshot = await getDocs(projectQ);
-      const projectConfigs = projectSnapshot.docs.map(doc => ({
+      if (projectId) {
+        // Buscar configurações específicas do projeto + configurações globais
+        configsQuery = query(
+          collection(db, 'configurations'),
+          where('type', '==', type),
+          where('projectId', '==', projectId),
+          orderBy('order', 'asc')
+        );
+      } else {
+        // Buscar apenas configurações globais
+        configsQuery = query(
+          collection(db, 'configurations'),
+          where('type', '==', type),
+          where('isGlobal', '==', true),
+          orderBy('order', 'asc')
+        );
+      }
+      
+      const snapshot = await getDocs(configsQuery);
+      
+      const configs = snapshot.docs.map(doc => ({
         id: doc.id,
+        value: doc.data().name,
+        label: doc.data().name,
         ...doc.data()
       }));
-      
-      // Combinar, priorizando configurações específicas do projeto
-      const configs = [...globalConfigs];
-      
-      // Adicionar configurações do projeto, substituindo as globais com mesmo nome
-      projectConfigs.forEach(pConfig => {
-        const index = configs.findIndex(c => c.name === pConfig.name);
-        if (index >= 0) {
-          configs[index] = pConfig;
-        } else {
-          configs.push(pConfig);
-        }
-      });
       
       return { data: configs, error: null };
     } catch (error) {

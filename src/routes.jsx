@@ -21,6 +21,7 @@ import TestSuiteEdit from './pages/TestSuiteEdit';
 import TestSuiteExecute from './pages/TestSuiteExecute';
 import Requirements from './pages/Requirements';
 import RequirementLinkTestCases from './pages/RequirementLinkTestCases';
+import QualityDashboard from './components/QualityDashboard';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -87,6 +88,10 @@ const AppRoutes = ({ toggleTheme }) => {
         
         {/* Rota 404 */}
         <Route path="*" element={<NotFound />} />
+
+        {/* Novas rotas */}
+        <Route path="/projects/:projectId/quality" element={<QualityDashboard />} />
+        <Route path="/projects/:projectId/reports" element={<Reports />} />
       </Route>
     </Routes>
   );

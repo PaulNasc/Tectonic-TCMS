@@ -97,14 +97,19 @@ export const traceabilityService = {
   // Obter requisitos de um projeto
   async getRequirementsByProject(projectId) {
     try {
+      if (!projectId) {
+        throw new Error('ID do projeto é obrigatório');
+      }
+      
+      const requirementsRef = collection(db, REQUIREMENTS_COLLECTION);
       const q = query(
-        collection(db, REQUIREMENTS_COLLECTION),
+        requirementsRef,
         where('projectId', '==', projectId),
         orderBy('createdAt', 'desc')
       );
       
-      const snapshot = await getDocs(q);
-      const requirements = snapshot.docs.map(doc => ({
+      const querySnapshot = await getDocs(q);
+      const requirements = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate?.() || null,
