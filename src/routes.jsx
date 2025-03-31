@@ -90,7 +90,7 @@ const AppRoutes = ({ toggleTheme }) => {
         <Route path="*" element={<NotFound />} />
 
         {/* Novas rotas */}
-        <Route path="/projects/:projectId/quality" element={<QualityDashboard />} />
+        <Route path="/projects/:projectId/quality" element={<Reports />} />
         <Route path="/projects/:projectId/reports" element={<Reports />} />
       </Route>
     </Routes>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -58,11 +58,20 @@ import { reportService } from '../services/reportService';
 import { projectService } from '../services/projectService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import QualityDashboard from '../components/QualityDashboard';
 
 // Componente principal da página de relatórios
 const Reports = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isQualityDashboard = location.pathname.includes('/quality');
+  
+  // Se for rota de qualidade, mostrar o dashboard de qualidade
+  if (isQualityDashboard) {
+    return <QualityDashboard projectId={projectId} />;
+  }
+  
   const [loading, setLoading] = useState(true);
   const [projectData, setProjectData] = useState(null);
   const [reports, setReports] = useState([]);
