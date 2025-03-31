@@ -664,104 +664,24 @@ const Settings = () => {
           </StyledCard>
         </Box>
 
-        <Box sx={{ mt: 3, mb: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Banco de Dados
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            O Firebase Firestore requer índices compostos para consultas complexas. 
-            Clique nos botões abaixo para criar os índices necessários diretamente no console do Firebase.
-          </Typography>
-          
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Índices necessários para o sistema de rastreabilidade
-            </Typography>
-            
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Índice para Requisitos
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Permite listar requisitos ordenados por data de criação.
-              </Typography>
-              <Button 
-                variant="outlined" 
-                size="small"
-                component="a"
-                href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=ClBwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcmVxdWlyZW1lbnRzL2luZGV4ZXMvXxABGg0KCXByb2plY3RJZBABGg0KCWNyZWF0ZWRBdBACGgwKCF9fbmFtZV9fEAI"
-                target="_blank"
-                rel="noopener"
-              >
-                Criar Índice
-              </Button>
-            </Box>
-            
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Índice para Configurações Globais
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Permite consultar configurações globais por tipo e ordem.
-              </Typography>
-              <Button 
-                variant="outlined" 
-                size="small"
-                component="a"
-                href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=Coleção:configurations,Campo:type,Tipo:ascending,Campo:isGlobal,Tipo:ascending,Campo:order,Tipo:ascending"
-                target="_blank"
-                rel="noopener"
-              >
-                Criar Índice
-              </Button>
-            </Box>
-            
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Índice para Configurações de Projeto
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Permite consultar configurações específicas de projeto por tipo e ordem.
-              </Typography>
-              <Button 
-                variant="outlined" 
-                size="small"
-                component="a"
-                href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=ClJwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvY29uZmlndXJhdGlvbnMvaW5kZXhlcy9fEAEaDQoJcHJvamVjdElkEAEaCAoEdHlwZRABGgkKBW9yZGVyEAEaDAoIX19uYW1lX18QAQ"
-                target="_blank"
-                rel="noopener"
-              >
-                Criar Índice
-              </Button>
-            </Box>
-            
-            <Divider sx={{ my: 2 }} />
-            
-            <Typography variant="body2" color="text.secondary">
-              <strong>Instrução para criar o índice:</strong>
-            </Typography>
-            <ol>
-              <li>Clique no botão "Criar Índice" para o índice que deseja adicionar</li>
-              <li>O console do Firebase será aberto com os campos já configurados</li>
-              <li>Verifique se os campos e a direção (ascending/descending) estão corretos</li>
-              <li>Clique em "Criar índice" no console do Firebase</li>
-              <li>A criação do índice levará alguns minutos para ser concluída</li>
-            </ol>
-            
-            <Alert severity="info" sx={{ mt: 2 }}>
-              Se você receber um erro informando que um índice é necessário, o Firebase normalmente fornecerá um link direto para criar esse índice específico. Você pode usar esse link para criar o índice necessário imediatamente.
-            </Alert>
-          </Paper>
-        </Box>
-
         <Box sx={{ mt: 4 }}>
           <Typography variant="h6" gutterBottom>
             Índices do Firebase
           </Typography>
           <Typography variant="body2" color="text.secondary" paragraph>
             Para o funcionamento correto do sistema, é necessário criar os seguintes índices no Firebase.
-            Clique nos botões abaixo para criar cada índice diretamente no console do Firebase.
+            Os índices são criados automaticamente quando necessários, mas você pode criá-los manualmente clicando nos botões abaixo.
           </Typography>
+
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Índices em uso pelo sistema
+            </Typography>
+            <Typography variant="body2">
+              O sistema verifica automaticamente quais índices são necessários com base nas funcionalidades utilizadas.
+              Apenas crie os índices listados abaixo se você receber um erro específico do Firebase indicando a necessidade.
+            </Typography>
+          </Alert>
 
           <Grid container spacing={2} sx={{ mt: 2 }}>
             <Grid item xs={12} md={6}>
@@ -877,13 +797,28 @@ const Settings = () => {
 
           <Box sx={{ mt: 3, backgroundColor: 'info.light', p: 2, borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Instruções para criação manual de índices
+              Múltiplos índices na mesma coleção
+            </Typography>
+            <Typography variant="body2" paragraph>
+              O Firebase permite criar vários índices para a mesma coleção com diferentes combinações de campos. Cada índice é exclusivo para a combinação específica de campos e suas direções (asc/desc).
+            </Typography>
+            <Typography variant="body2" paragraph>
+              <strong>Por exemplo</strong>: A coleção "configurations" tem dois índices diferentes:
+              <ul>
+                <li>Índice 1: <code>type</code>, <code>isGlobal</code>, <code>order</code></li>
+                <li>Índice 2: <code>type</code>, <code>projectId</code>, <code>order</code></li>
+              </ul>
+              Ambos funcionam independentemente e não há conflito entre eles.
+            </Typography>
+            <Typography variant="subtitle2" gutterBottom>
+              Instruções para criação:
             </Typography>
             <Typography variant="body2">
               1. Ao clicar no botão, você será redirecionado para o console do Firebase<br />
               2. Faça login com sua conta Google que tem acesso ao projeto<br />
               3. Confirme a criação do índice clicando em "Criar índice"<br />
-              4. Aguarde alguns minutos para que o índice seja criado e fique disponível
+              4. A criação do índice levará alguns minutos para ser concluída<br />
+              5. Não é necessário criar o mesmo índice múltiplas vezes
             </Typography>
           </Box>
         </Box>
