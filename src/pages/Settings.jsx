@@ -497,32 +497,29 @@ const Settings = () => {
 
         <Grid container spacing={2} sx={{ mt: 2 }}>
           {/* Apenas mostrar os índices que ainda não foram criados */}
-          
-          {!indexStatus.configGlobal && (
+          {!indexStatus['configGlobal'] && (
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 2, position: 'relative' }}>
-                <Typography variant="subtitle1" gutterBottom>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
                   Índice para Configurações Globais
                 </Typography>
-                <Typography variant="body2" paragraph>
-                  Coleção: <code>configurations</code><br />
-                  Campos: <code>type</code> (asc), <code>isGlobal</code> (asc), <code>order</code> (asc)
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Consulta das configurações globais por tipo e ordem
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button 
-                    variant="contained" 
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button
+                    variant="contained"
                     color="primary"
-                    href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClNwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2NvbmZpZ3VyYXRpb25zL2luZGV4ZXMvXxAAGgwIAhIIdHlwZRAAGg0IAxIJaXNHbG9iYWwQABoMCAMSBm9yZGVyEAAaDAoCEgZfX25hbWUQAQ"
+                    component="a"
+                    href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=Cktwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvY29uZmlndXJhdGlvbnMvaW5kZXhlcy9fEAEaDAoIdHlwZUNvZGUQARoMCghvcmRlck51bRACGgwKCF9fbmFtZV9fEAI"
                     target="_blank"
-                    sx={{ mt: 1, flex: 2 }}
+                    startIcon={<AddIcon />}
                   >
                     Criar Índice
                   </Button>
-                  <Button 
+                  <Button
                     variant="outlined"
-                    color="success"
                     onClick={() => handleIndexCreated('configGlobal')}
-                    sx={{ mt: 1, flex: 1 }}
                   >
                     Marcar como criado
                   </Button>
@@ -530,32 +527,30 @@ const Settings = () => {
               </Paper>
             </Grid>
           )}
-
-          {!indexStatus.configProject && (
+          
+          {!indexStatus['configProject'] && (
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
+              <Paper sx={{ p: 2, position: 'relative' }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
                   Índice para Configurações de Projeto
                 </Typography>
-                <Typography variant="body2" paragraph>
-                  Coleção: <code>configurations</code><br />
-                  Campos: <code>type</code> (asc), <code>projectId</code> (asc), <code>order</code> (asc)
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Consulta das configurações por projeto, tipo e ordem
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button 
-                    variant="contained" 
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button
+                    variant="contained"
                     color="primary"
-                    href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClRwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2NvbmZpZ3VyYXRpb25zL2luZGV4ZXMvXxAAGgwIAhIIdHlwZRAAGg4IAxIKcHJvamVjdElkEAAaDAIDEgZvcmRlchAAGgwKAhIGX19uYW1lEAE"
+                    component="a"
+                    href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=Cktwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcHJvamVjdENvbmZpZ3MvaW5kZXhlcy9fEAEaDAoIcHJvamVjdElkEAEaDAoIdHlwZUNvZGUQARoMCghvcmRlck51bRACGgwKCF9fbmFtZV9fEAI"
                     target="_blank"
-                    sx={{ mt: 1, flex: 2 }}
+                    startIcon={<AddIcon />}
                   >
                     Criar Índice
                   </Button>
-                  <Button 
+                  <Button
                     variant="outlined"
-                    color="success"
                     onClick={() => handleIndexCreated('configProject')}
-                    sx={{ mt: 1, flex: 1 }}
                   >
                     Marcar como criado
                   </Button>
@@ -563,32 +558,30 @@ const Settings = () => {
               </Paper>
             </Grid>
           )}
-
-          {!indexStatus.requirements && (
+          
+          {!indexStatus['requirements'] && (
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
+              <Paper sx={{ p: 2, position: 'relative' }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
                   Índice para Requisitos
                 </Typography>
-                <Typography variant="body2" paragraph>
-                  Coleção: <code>requirements</code><br />
-                  Campos: <code>projectId</code> (asc), <code>createdAt</code> (desc)
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Consulta de requisitos por projeto e categoria
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button 
-                    variant="contained" 
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button
+                    variant="contained"
                     color="primary"
-                    href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClRwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL3JlcXVpcmVtZW50cy9pbmRleGVzL18QABoOCAISCnByb2plY3RJZBAAGg4IAxIJY3JlYXRlZEF0EAEaDAoCEgZfX25hbWUQAQ"
+                    component="a"
+                    href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=Cktwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcmVxdWlyZW1lbnRzL2luZGV4ZXMvXxABGgwKCHByb2plY3RJZBABGgwKCGNhdGVnb3J5EAEaDAoIX19uYW1lX18QAg"
                     target="_blank"
-                    sx={{ mt: 1, flex: 2 }}
+                    startIcon={<AddIcon />}
                   >
                     Criar Índice
                   </Button>
-                  <Button 
+                  <Button
                     variant="outlined"
-                    color="success"
                     onClick={() => handleIndexCreated('requirements')}
-                    sx={{ mt: 1, flex: 1 }}
                   >
                     Marcar como criado
                   </Button>
@@ -596,32 +589,30 @@ const Settings = () => {
               </Paper>
             </Grid>
           )}
-
-          {!indexStatus.projectsByMember && (
+          
+          {!indexStatus['projectsByMember'] && (
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
+              <Paper sx={{ p: 2, position: 'relative' }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
                   Índice para Projetos por Membro
                 </Typography>
-                <Typography variant="body2" paragraph>
-                  Coleção: <code>projects</code><br />
-                  Campos: <code>memberIds</code> (array), <code>createdAt</code> (desc)
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Consulta de projetos por IDs de membros
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button 
-                    variant="contained" 
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button
+                    variant="contained"
                     color="primary"
-                    href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClBwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL3Byb2plY3RzL2luZGV4ZXMvXxAAGg8IAhABEgltZW1iZXJJZHMaDAIDEghjcmVhdGVkQXQQABoMCgISBl9fbmFtZRAB"
+                    component="a"
+                    href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=Cktwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcHJvamVjdHMvaW5kZXhlcy9fEAEaDAoIbWVtYmVySWRzEAMaDgoKdXBkYXRlZEF0EAIaDAoIX19uYW1lX18QAg"
                     target="_blank"
-                    sx={{ mt: 1, flex: 2 }}
+                    startIcon={<AddIcon />}
                   >
                     Criar Índice
                   </Button>
-                  <Button 
+                  <Button
                     variant="outlined"
-                    color="success"
                     onClick={() => handleIndexCreated('projectsByMember')}
-                    sx={{ mt: 1, flex: 1 }}
                   >
                     Marcar como criado
                   </Button>
@@ -629,32 +620,61 @@ const Settings = () => {
               </Paper>
             </Grid>
           )}
-
-          {!indexStatus.reports && (
+          
+          {!indexStatus['reports'] && (
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
+              <Paper sx={{ p: 2, position: 'relative' }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
                   Índice para Relatórios
                 </Typography>
-                <Typography variant="body2" paragraph>
-                  Coleção: <code>reports</code><br />
-                  Campos: <code>projectId</code> (asc), <code>generatedAt</code> (desc)
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Consulta de relatórios por projeto e data de geração
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button 
-                    variant="contained" 
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button
+                    variant="contained"
                     color="primary"
-                    href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClBwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL3JlcG9ydHMvaW5kZXhlcy9fEAAaDggCEgpwcm9qZWN0SWQQABoOCAMSCmdlbmVyYXRlZEF0EAEaDAoCEgZfX25hbWUQAQ"
+                    component="a"
+                    href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=Cktwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcmVwb3J0cy9pbmRleGVzL18QARoNCglwcm9qZWN0SWQQARoPCgtnZW5lcmF0ZWRBdBACGgwKCF9fbmFtZV9fEAI"
                     target="_blank"
-                    sx={{ mt: 1, flex: 2 }}
+                    startIcon={<AddIcon />}
                   >
                     Criar Índice
                   </Button>
-                  <Button 
+                  <Button
                     variant="outlined"
-                    color="success"
                     onClick={() => handleIndexCreated('reports')}
-                    sx={{ mt: 1, flex: 1 }}
+                  >
+                    Marcar como criado
+                  </Button>
+                </Box>
+              </Paper>
+            </Grid>
+          )}
+          
+          {!indexStatus['reportsByProject'] && (
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2, position: 'relative' }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Índice para Relatórios por Projeto
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Consulta de relatórios por projeto e tipo
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    component="a"
+                    href="https://console.firebase.google.com/v1/r/project/teste-3e34f/firestore/indexes?create_composite=Cktwcm9qZWN0cy90ZXN0ZS0zZTM0Zi9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcmVwb3J0cy9pbmRleGVzL18QARoNCglwcm9qZWN0SWQQARoJCgV0eXBlXxABGg8KC2dlbmVyYXRlZEF0EAIaDAoIX19uYW1lX18QAg"
+                    target="_blank"
+                    startIcon={<AddIcon />}
+                  >
+                    Criar Índice
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleIndexCreated('reportsByProject')}
                   >
                     Marcar como criado
                   </Button>
@@ -663,45 +683,6 @@ const Settings = () => {
             </Grid>
           )}
         </Grid>
-
-        {/* Se todos os índices já estão criados, mostrar uma interface simplificada */}
-        {!hasRequiredIndexes && (
-          <Paper sx={{ p: 2, mt: 2, bgcolor: 'success.light', color: 'success.dark' }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-              Sistema configurado com sucesso
-            </Typography>
-            <Typography variant="body2">
-              Todos os índices necessários já estão configurados no Firebase, o que garante que todas as consultas funcionem com a melhor performance possível. Caso novos índices sejam necessários no futuro, eles aparecerão aqui.
-            </Typography>
-          </Paper>
-        )}
-
-        <Box sx={{ mt: 3, backgroundColor: 'info.light', p: 2, borderRadius: 1 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Múltiplos índices na mesma coleção
-          </Typography>
-          <Typography variant="body2" paragraph>
-            O Firebase permite criar vários índices para a mesma coleção com diferentes combinações de campos. Cada índice é exclusivo para a combinação específica de campos e suas direções (asc/desc).
-          </Typography>
-          <Typography variant="body2" paragraph>
-            <strong>Por exemplo</strong>: A coleção "configurations" tem dois índices diferentes:
-            <ul>
-              <li>Índice 1: <code>type</code>, <code>isGlobal</code>, <code>order</code></li>
-              <li>Índice 2: <code>type</code>, <code>projectId</code>, <code>order</code></li>
-            </ul>
-            Ambos funcionam independentemente e não há conflito entre eles.
-          </Typography>
-          <Typography variant="subtitle2" gutterBottom>
-            Instruções para criação:
-          </Typography>
-          <Typography variant="body2">
-            1. Ao clicar no botão, você será redirecionado para o console do Firebase<br />
-            2. Faça login com sua conta Google que tem acesso ao projeto<br />
-            3. Confirme a criação do índice clicando em "Criar índice"<br />
-            4. A criação do índice levará alguns minutos para ser concluída<br />
-            5. Quando o índice estiver criado, volte aqui e clique em "Marcar como criado"
-          </Typography>
-        </Box>
       </Box>
     );
   };
