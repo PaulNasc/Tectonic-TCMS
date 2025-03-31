@@ -40,8 +40,8 @@ import {
   PlayArrow as ExecuteIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
-  Group as MembersIcon,
-  Description as RequirementsIcon,
+  Group as TeamIcon,
+  Description as DocsIcon,
   Autorenew as AutomationIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
