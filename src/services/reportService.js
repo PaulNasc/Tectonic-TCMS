@@ -45,8 +45,8 @@ export const reportService = {
       
       // Processar dados da matriz para obter insights
       const requirementsInsights = processRequirementsMatrix(matrix || []);
-      
-      // Criar relatório
+
+    // Criar relatório
       const report = {
         projectId,
         projectName: project.name,
@@ -79,32 +79,32 @@ export const reportService = {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
-      
-      return { 
-        data: { 
-          id: docRef.id,
+
+    return { 
+      data: { 
+        id: docRef.id,
           ...report
-        }, 
-        error: null 
-      };
-    } catch (error) {
+      }, 
+      error: null 
+    };
+  } catch (error) {
       console.error('Erro ao gerar relatório de projeto:', error);
       return { data: null, error: error.message };
-    }
+  }
   },
-  
+
   // Buscar relatório específico
   async getReportById(reportId) {
-    try {
+  try {
       const reportRef = doc(db, REPORTS_COLLECTION, reportId);
-      const reportDoc = await getDoc(reportRef);
-      
-      if (!reportDoc.exists()) {
-        throw new Error('Relatório não encontrado');
-      }
-      
+    const reportDoc = await getDoc(reportRef);
+    
+    if (!reportDoc.exists()) {
+      throw new Error('Relatório não encontrado');
+    }
+
       const report = {
-        id: reportDoc.id,
+        id: reportDoc.id, 
         ...reportDoc.data(),
         generatedAt: reportDoc.data().generatedAt?.toDate?.() || null,
         createdAt: reportDoc.data().createdAt?.toDate?.() || null,
@@ -128,15 +128,15 @@ export const reportService = {
       
       const reportsSnapshot = await getDocs(q);
       const reports = reportsSnapshot.docs.map(doc => ({
-        id: doc.id,
+      id: doc.id,
         ...doc.data(),
         generatedAt: doc.data().generatedAt?.toDate?.() || null,
         createdAt: doc.data().createdAt?.toDate?.() || null,
         updatedAt: doc.data().updatedAt?.toDate?.() || null
-      }));
-      
-      return { data: reports, error: null };
-    } catch (error) {
+    }));
+
+    return { data: reports, error: null };
+  } catch (error) {
       console.error('Erro ao listar relatórios:', error);
       return { data: [], error: error.message };
     }
@@ -601,7 +601,7 @@ function processRequirementsMatrix(matrix) {
     
     return acc;
   }, {});
-  
+
   return {
     uncovered,
     criticalWithFailures,

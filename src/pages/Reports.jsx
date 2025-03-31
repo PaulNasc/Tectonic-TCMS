@@ -246,7 +246,7 @@ const Reports = () => {
 
   // Estado de erro
   if (error && !selectedReport && reports.length === 0) {
-    return (
+  return (
       <Alert severity="error" sx={{ m: 3 }}>
         {error}
       </Alert>
@@ -271,7 +271,7 @@ const Reports = () => {
 
       <Typography variant="body2" color="text.secondary">
         {projectData?.name && `Projeto: ${projectData.name}`}
-      </Typography>
+          </Typography>
 
       <Divider sx={{ my: 2 }} />
 
@@ -359,7 +359,7 @@ const Reports = () => {
         reports.map((report) => (
           <Grid item xs={12} sm={6} md={4} key={report.id || report.generatedAt}>
             <Card 
-              sx={{ 
+            sx={{ 
                 height: '100%', 
                 display: 'flex', 
                 flexDirection: 'column',
@@ -397,10 +397,10 @@ const Reports = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Typography variant="body2" sx={{ mr: 1 }}>
                         Cobertura:
-                      </Typography>
+              </Typography>
                       <Typography variant="body2" fontWeight="medium">
                         {Math.round(report.summary.coveragePercentage)}%
-                      </Typography>
+              </Typography>
                     </Box>
                   )}
                 </Box>
@@ -621,7 +621,7 @@ const Reports = () => {
                   <Paper sx={{ p: 2 }} variant="outlined">
                     <Typography variant="subtitle1" gutterBottom>
                       Métricas de Requisitos
-                    </Typography>
+              </Typography>
                     
                     <TableContainer>
                       <Table size="small">
@@ -653,7 +653,7 @@ const Reports = () => {
                       <>
                         <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
                           Cobertura por Prioridade
-                        </Typography>
+              </Typography>
                         
                         <TableContainer>
                           <Table size="small">
@@ -680,8 +680,8 @@ const Reports = () => {
                       </>
                     )}
                   </Paper>
-                </Grid>
-                
+          </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Paper sx={{ p: 2 }} variant="outlined">
                     <Typography variant="subtitle1" gutterBottom>
@@ -752,7 +752,7 @@ const Reports = () => {
                       }}>
                         <Typography variant="h3" fontWeight="bold">
                           {selectedReport.metrics.overallQualityScore.toFixed(1)}
-                        </Typography>
+              </Typography>
                       </Box>
                     </Box>
                     
@@ -761,9 +761,9 @@ const Reports = () => {
                        selectedReport.metrics.overallQualityScore >= 3.5 ? 'Bom' : 
                        selectedReport.metrics.overallQualityScore >= 2.5 ? 'Regular' : 
                        selectedReport.metrics.overallQualityScore >= 1.5 ? 'Insuficiente' : 'Crítico'}
-                    </Typography>
+              </Typography>
                   </Paper>
-                </Grid>
+          </Grid>
               </Grid>
             </Box>
           )}
@@ -816,9 +816,9 @@ const Reports = () => {
                       </List>
                     </Paper>
                   )}
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
+        </Grid>
+
+          <Grid item xs={12} md={6}>
                   {selectedReport.riskAnalysis.criticalFailing?.length > 0 && (
                     <Paper sx={{ p: 2 }} variant="outlined">
                       <Typography variant="subtitle2" gutterBottom>
@@ -838,7 +838,7 @@ const Reports = () => {
                               
                               <Typography variant="body2" fontWeight="medium" sx={{ mt: 1 }}>
                                 Testes Falhando:
-                              </Typography>
+              </Typography>
                               
                               <List dense>
                                 {req.failingTests.map((test) => (
@@ -886,7 +886,7 @@ const Reports = () => {
             </Box>
           )}
         </Paper>
-      </Box>
+              </Box>
     );
   };
 
@@ -910,10 +910,10 @@ const Reports = () => {
             
             <Grid item xs={12} md={8}>
               <ReportViewer />
-            </Grid>
+          </Grid>
           </>
         )}
-      </Grid>
+        </Grid>
       
       <GenerateReportDialog />
     </Box>

@@ -22,6 +22,7 @@ import TestSuiteExecute from './pages/TestSuiteExecute';
 import Requirements from './pages/Requirements';
 import RequirementLinkTestCases from './pages/RequirementLinkTestCases';
 import QualityDashboard from './components/QualityDashboard';
+import AutomationDashboard from './pages/AutomationDashboard';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -68,6 +69,10 @@ const AppRoutes = ({ toggleTheme }) => {
         {/* Rotas de Requisitos e Rastreabilidade */}
         <Route path="projects/:projectId/requirements" element={<Requirements />} />
         <Route path="projects/:projectId/requirements/:requirementId/link-tests" element={<RequirementLinkTestCases />} />
+        
+        {/* Rotas de Automação e CI/CD */}
+        <Route path="projects/:projectId/automation" element={<AutomationDashboard />} />
+        <Route path="projects/:projectId/automation/:automationId" element={<AutomationDashboard />} />
         
         {/* Outras rotas */}
         <Route path="reports" element={<Reports />} />

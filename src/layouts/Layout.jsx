@@ -39,7 +39,10 @@ import {
   People as MembersIcon,
   PlayArrow as ExecuteIcon,
   ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon
+  ExpandMore as ExpandMoreIcon,
+  Group as MembersIcon,
+  Description as RequirementsIcon,
+  Autorenew as AutomationIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -266,6 +269,7 @@ const Layout = ({ toggleTheme }) => {
 
   const projectMenuItems = isProjectRoute ? [
     { text: 'Requisitos', icon: <RequirementsIcon />, path: `/projects/${projectId}/requirements` },
+    { text: 'Automação', icon: <AutomationIcon />, path: `/projects/${projectId}/automation` },
     { text: 'Membros', icon: <MembersIcon />, path: `/projects/${projectId}/members` },
     { text: 'Configurações', icon: <SettingsIcon />, path: `/projects/${projectId}/settings` }
   ] : [];

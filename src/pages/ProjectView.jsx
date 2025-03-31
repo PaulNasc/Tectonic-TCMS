@@ -40,7 +40,8 @@ import {
   Restore as RestoreIcon,
   Archive as ArchiveIcon,
   Delete as DeleteIcon,
-  Article as RequirementsIcon
+  Article as RequirementsIcon,
+  Autorenew as AutomationIcon
 } from '@mui/icons-material';
 import { projectService } from '../services/projectService';
 import { testSuiteService } from '../services/testSuiteService';
@@ -232,6 +233,13 @@ const ProjectView = () => {
         onClick={() => navigate(`/projects/${id}/requirements`)}
       >
         Requisitos
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<AutomationIcon />}
+        onClick={() => navigate(`/projects/${id}/automation`)}
+      >
+        Automação
       </Button>
       <Button
         variant="outlined"
