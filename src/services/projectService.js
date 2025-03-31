@@ -1,7 +1,22 @@
 import { db } from '../config/firebase';
-import { collection, doc, getDoc, getDocs, addDoc, updateDoc, query, where, orderBy } from 'firebase/firestore';
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  query, 
+  where, 
+  orderBy,
+  serverTimestamp,
+  increment,
+  arrayUnion,
+  arrayRemove
+} from 'firebase/firestore';
 
 const COLLECTION = 'projects';
+const CONFIG_COLLECTION = 'configurations';
 
 export const projectService = {
   async createProject(projectData) {
@@ -15,6 +30,9 @@ export const projectService = {
         addedAt: new Date()
       };
 
+      // Obter configurações globais para inicializar o projeto
+      const globalConfigs = await this.getGlobalConfigurations();
+
       const docRef = await addDoc(collection(db, COLLECTION), {
         name: projectData.name,
         description: projectData.description,
@@ -26,10 +44,24 @@ export const projectService = {
         status: 'active',
         testSuites: [],
         environments: [],
+        // Nova estrutura de estatísticas ampliada
         statistics: {
           totalTestCases: 0,
+          totalSuites: 0,
+          totalExecutions: 0,
           passRate: 0,
-          lastExecution: null
+          lastExecution: null,
+          automationRate: 0,
+          failRate: 0,
+          blockedRate: 0
+        },
+        // Nova estrutura de configurações
+        config: {
+          testTypes: globalConfigs.testTypes || [],
+          priorities: globalConfigs.priorities || [],
+          statuses: globalConfigs.statuses || [],
+          tags: [],
+          customFields: []
         }
       });
       
@@ -47,14 +79,209 @@ export const projectService = {
         environments: [],
         statistics: {
           totalTestCases: 0,
+          totalSuites: 0,
+          totalExecutions: 0,
           passRate: 0,
-          lastExecution: null
+          lastExecution: null,
+          automationRate: 0,
+          failRate: 0,
+          blockedRate: 0
+        },
+        config: {
+          testTypes: globalConfigs.testTypes || [],
+          priorities: globalConfigs.priorities || [],
+          statuses: globalConfigs.statuses || [],
+          tags: [],
+          customFields: []
         }
       };
       
       return { data: newProject, error: null };
     } catch (error) {
       console.error('Erro ao criar projeto:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Função para obter configurações globais
+  async getGlobalConfigurations() {
+    try {
+      const types = ['testTypes', 'priorities', 'statuses'];
+      const configs = {};
+      
+      for (const type of types) {
+        const q = query(
+          collection(db, CONFIG_COLLECTION),
+          where('type', '==', type),
+          where('isGlobal', '==', true),
+          orderBy('order', 'asc')
+        );
+        
+        const snapshot = await getDocs(q);
+        configs[type] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+      }
+      
+      // Se não houver configurações globais, usar valores padrão
+      if (!configs.testTypes || configs.testTypes.length === 0) {
+        configs.testTypes = [
+          { id: 'default-manual', name: 'Manual', description: 'Testes manuais', order: 0, isGlobal: true, type: 'testTypes' },
+          { id: 'default-auto', name: 'Automatizado', description: 'Testes automatizados', order: 1, isGlobal: true, type: 'testTypes' }
+        ];
+      }
+      
+      if (!configs.priorities || configs.priorities.length === 0) {
+        configs.priorities = [
+          { id: 'default-low', name: 'Baixa', color: '#4CAF50', order: 0, isGlobal: true, type: 'priorities' },
+          { id: 'default-medium', name: 'Média', color: '#FFC107', order: 1, isGlobal: true, type: 'priorities' },
+          { id: 'default-high', name: 'Alta', color: '#F44336', order: 2, isGlobal: true, type: 'priorities' }
+        ];
+      }
+      
+      if (!configs.statuses || configs.statuses.length === 0) {
+        configs.statuses = [
+          { id: 'default-pending', name: 'Pendente', color: '#9E9E9E', order: 0, isGlobal: true, type: 'statuses' },
+          { id: 'default-progress', name: 'Em Andamento', color: '#2196F3', order: 1, isGlobal: true, type: 'statuses' },
+          { id: 'default-pass', name: 'Passou', color: '#4CAF50', order: 2, isGlobal: true, type: 'statuses' },
+          { id: 'default-fail', name: 'Falhou', color: '#F44336', order: 3, isGlobal: true, type: 'statuses' },
+          { id: 'default-blocked', name: 'Bloqueado', color: '#9C27B0', order: 4, isGlobal: true, type: 'statuses' }
+        ];
+      }
+      
+      return configs;
+    } catch (error) {
+      console.error('Erro ao obter configurações globais:', error);
+      // Retornar valores padrão em caso de erro
+      return {
+        testTypes: [
+          { id: 'default-manual', name: 'Manual', description: 'Testes manuais', order: 0, isGlobal: true, type: 'testTypes' },
+          { id: 'default-auto', name: 'Automatizado', description: 'Testes automatizados', order: 1, isGlobal: true, type: 'testTypes' }
+        ],
+        priorities: [
+          { id: 'default-low', name: 'Baixa', color: '#4CAF50', order: 0, isGlobal: true, type: 'priorities' },
+          { id: 'default-medium', name: 'Média', color: '#FFC107', order: 1, isGlobal: true, type: 'priorities' },
+          { id: 'default-high', name: 'Alta', color: '#F44336', order: 2, isGlobal: true, type: 'priorities' }
+        ],
+        statuses: [
+          { id: 'default-pending', name: 'Pendente', color: '#9E9E9E', order: 0, isGlobal: true, type: 'statuses' },
+          { id: 'default-progress', name: 'Em Andamento', color: '#2196F3', order: 1, isGlobal: true, type: 'statuses' },
+          { id: 'default-pass', name: 'Passou', color: '#4CAF50', order: 2, isGlobal: true, type: 'statuses' },
+          { id: 'default-fail', name: 'Falhou', color: '#F44336', order: 3, isGlobal: true, type: 'statuses' },
+          { id: 'default-blocked', name: 'Bloqueado', color: '#9C27B0', order: 4, isGlobal: true, type: 'statuses' }
+        ]
+      };
+    }
+  },
+
+  // Método para atualizar projeto com contadores de estatísticas
+  async updateProjectStatistics(projectId, update) {
+    try {
+      const projectRef = doc(db, COLLECTION, projectId);
+      const projectDoc = await getDoc(projectRef);
+      
+      if (!projectDoc.exists()) {
+        throw new Error('Projeto não encontrado');
+      }
+      
+      const projectData = projectDoc.data();
+      const statistics = projectData.statistics || {};
+      
+      // Atualizar estatísticas com os novos valores
+      const updatedStats = { ...statistics };
+      
+      for (const [key, value] of Object.entries(update)) {
+        if (typeof value === 'number' && typeof statistics[key] === 'number') {
+          // Incrementar o valor existente
+          updatedStats[key] = statistics[key] + value;
+        } else {
+          // Substituir o valor
+          updatedStats[key] = value;
+        }
+      }
+      
+      // Recalcular taxas se necessário
+      if (updatedStats.totalExecutions > 0) {
+        if ('passCount' in update || 'totalExecutions' in update) {
+          updatedStats.passRate = (updatedStats.passCount / updatedStats.totalExecutions) * 100;
+        }
+        
+        if ('failCount' in update || 'totalExecutions' in update) {
+          updatedStats.failRate = (updatedStats.failCount / updatedStats.totalExecutions) * 100;
+        }
+        
+        if ('blockedCount' in update || 'totalExecutions' in update) {
+          updatedStats.blockedRate = (updatedStats.blockedCount / updatedStats.totalExecutions) * 100;
+        }
+      }
+      
+      if (updatedStats.totalTestCases > 0 && 'automatedTestCases' in update) {
+        updatedStats.automationRate = (updatedStats.automatedTestCases / updatedStats.totalTestCases) * 100;
+      }
+      
+      await updateDoc(projectRef, {
+        statistics: updatedStats,
+        updatedAt: new Date()
+      });
+      
+      return { data: updatedStats, error: null };
+    } catch (error) {
+      console.error('Erro ao atualizar estatísticas do projeto:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Adicionar tag ao projeto
+  async addTagToProject(projectId, tag) {
+    try {
+      const projectRef = doc(db, COLLECTION, projectId);
+      
+      const newTag = {
+        id: tag.id || `tag-${Date.now()}`,
+        name: tag.name,
+        color: tag.color || '#3f51b5',
+        description: tag.description || ''
+      };
+      
+      await updateDoc(projectRef, {
+        'config.tags': arrayUnion(newTag),
+        updatedAt: new Date()
+      });
+      
+      return { data: newTag, error: null };
+    } catch (error) {
+      console.error('Erro ao adicionar tag ao projeto:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Remover tag do projeto
+  async removeTagFromProject(projectId, tagId) {
+    try {
+      const projectRef = doc(db, COLLECTION, projectId);
+      const projectDoc = await getDoc(projectRef);
+      
+      if (!projectDoc.exists()) {
+        throw new Error('Projeto não encontrado');
+      }
+      
+      const projectData = projectDoc.data();
+      const tags = projectData.config?.tags || [];
+      const tagToRemove = tags.find(tag => tag.id === tagId);
+      
+      if (!tagToRemove) {
+        throw new Error('Tag não encontrada');
+      }
+      
+      await updateDoc(projectRef, {
+        'config.tags': arrayRemove(tagToRemove),
+        updatedAt: new Date()
+      });
+      
+      return { data: tagId, error: null };
+    } catch (error) {
+      console.error('Erro ao remover tag do projeto:', error);
       return { data: null, error: error.message };
     }
   },

@@ -23,7 +23,9 @@ import {
   DialogActions,
   Snackbar,
   Alert,
-  Chip
+  Chip,
+  Paper,
+  CircularProgress
 } from '@mui/material';
 import {
   Brightness4 as DarkModeIcon,
@@ -33,9 +35,12 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  AdminPanelSettings as AdminIcon
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
+import { configService } from '../services/configService';
 
 const Container = styled.div`
   padding: 24px;
@@ -101,26 +106,63 @@ const Settings = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [dialogType, setDialogType] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const isAdminHybex = user?.email === 'admin@hybex';
   
   const [configurations, setConfigurations] = useState({
-    testTypes: [
-      { id: 1, name: 'Funcional', description: 'Testes de funcionalidade' },
-      { id: 2, name: 'Integração', description: 'Testes de integração entre componentes' },
-      { id: 3, name: 'Performance', description: 'Testes de desempenho' }
-    ],
-    priorities: [
-      { id: 1, name: 'Baixa', color: '#4CAF50' },
-      { id: 2, name: 'Média', color: '#FFC107' },
-      { id: 3, name: 'Alta', color: '#F44336' },
-      { id: 4, name: 'Crítica', color: '#9C27B0' }
-    ],
-    statuses: [
-      { id: 1, name: 'Não Iniciado', color: '#9E9E9E' },
-      { id: 2, name: 'Em Andamento', color: '#2196F3' },
-      { id: 3, name: 'Concluído', color: '#4CAF50' },
-      { id: 4, name: 'Bloqueado', color: '#F44336' }
-    ]
+    testTypes: [],
+    priorities: [],
+    statuses: []
   });
+
+  // Carregar configurações do banco de dados
+  useEffect(() => {
+    const loadConfigurations = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Obter configurações globais
+        const { data, error } = await configService.getAllGlobalConfigs();
+        
+        if (error) {
+          throw new Error(error);
+        }
+        
+        // Usar dados retornados ou inicializar vazio
+        setConfigurations({
+          testTypes: data?.testTypes || [],
+          priorities: data?.priorities || [],
+          statuses: data?.statuses || []
+        });
+        
+        // Se não houver configurações, criar as padrão
+        if (!data || Object.keys(data).length === 0 || 
+            !data.testTypes || data.testTypes.length === 0) {
+          console.log('Criando configurações padrão...');
+          await configService.createDefaultConfigurations();
+          
+          // Recarregar depois de criar as configurações padrão
+          const { data: newData } = await configService.getAllGlobalConfigs();
+          setConfigurations({
+            testTypes: newData?.testTypes || [],
+            priorities: newData?.priorities || [],
+            statuses: newData?.statuses || []
+          });
+        }
+      } catch (err) {
+        console.error('Erro ao carregar configurações:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadConfigurations();
+  }, []);
 
   const handleThemeChange = () => {
     const newMode = isDarkMode ? 'light' : 'dark';
@@ -145,42 +187,97 @@ const Settings = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = (type, id) => {
-    const newConfigs = {
-      ...configurations,
-      [type]: configurations[type].filter(item => item.id !== id)
-    };
-    setConfigurations(newConfigs);
-    setSnackbar({
-      open: true,
-      message: 'Item excluído com sucesso!',
-      severity: 'success'
-    });
+  const handleDelete = async (type, id) => {
+    try {
+      setError(null);
+      
+      // Chamar o serviço para remover o item
+      const { error } = await configService.deleteConfig(id);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      // Atualizar estado local
+      setConfigurations(prev => ({
+        ...prev,
+        [type]: prev[type].filter(item => item.id !== id)
+      }));
+      
+      setSnackbar({
+        open: true,
+        message: 'Item excluído com sucesso!',
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Erro ao excluir item:', err);
+      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: `Erro ao excluir: ${err.message}`,
+        severity: 'error'
+      });
+    }
   };
 
-  const handleSave = (type, data) => {
-    let newConfigs;
-    if (editingItem) {
-      newConfigs = {
-        ...configurations,
-        [type]: configurations[type].map(item =>
-          item.id === editingItem.id ? { ...item, ...data } : item
-        )
-      };
-    } else {
-      const newId = Math.max(...configurations[type].map(item => item.id)) + 1;
-      newConfigs = {
-        ...configurations,
-        [type]: [...configurations[type], { id: newId, ...data }]
-      };
+  const handleSave = async (type, data) => {
+    try {
+      setError(null);
+      
+      if (editingItem) {
+        // Atualizar item existente
+        const { data: updatedItem, error } = await configService.updateConfig(
+          editingItem.id, 
+          data
+        );
+        
+        if (error) {
+          throw new Error(error);
+        }
+        
+        // Atualizar estado local
+        setConfigurations(prev => ({
+          ...prev,
+          [type]: prev[type].map(item =>
+            item.id === editingItem.id ? { ...item, ...data } : item
+          )
+        }));
+      } else {
+        // Criar novo item
+        const configData = {
+          ...data,
+          type,
+          isGlobal: true
+        };
+        
+        const { data: newItem, error } = await configService.createConfig(configData);
+        
+        if (error) {
+          throw new Error(error);
+        }
+        
+        // Atualizar estado local
+        setConfigurations(prev => ({
+          ...prev,
+          [type]: [...prev[type], newItem]
+        }));
+      }
+      
+      setDialogOpen(false);
+      setSnackbar({
+        open: true,
+        message: `Item ${editingItem ? 'atualizado' : 'adicionado'} com sucesso!`,
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Erro ao salvar item:', err);
+      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: `Erro ao salvar: ${err.message}`,
+        severity: 'error'
+      });
     }
-    setConfigurations(newConfigs);
-    setDialogOpen(false);
-    setSnackbar({
-      open: true,
-      message: `Item ${editingItem ? 'atualizado' : 'adicionado'} com sucesso!`,
-      severity: 'success'
-    });
   };
 
   const ConfigDialog = () => {
@@ -285,6 +382,7 @@ const Settings = () => {
               bgcolor: 'var(--neon-primary)',
               '&:hover': { bgcolor: 'var(--neon-primary-hover)' }
             }}
+            disabled={!formData.name}
           >
             Salvar
           </Button>
@@ -292,6 +390,17 @@ const Settings = () => {
       </Dialog>
     );
   };
+
+  // Renderização condicional para carregamento
+  if (loading) {
+    return (
+      <Container>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container>
@@ -302,9 +411,56 @@ const Settings = () => {
       >
         <Header>
           <Typography variant="h4" color="var(--text-primary)">
-          Configurações
-        </Typography>
+            Configurações
+          </Typography>
         </Header>
+
+        {error && (
+          <Alert 
+            severity="error" 
+            sx={{ mb: 3 }}
+            onClose={() => setError(null)}
+          >
+            {error}
+          </Alert>
+        )}
+
+        {isAdminHybex && (
+          <Box mb={4}>
+            <Paper 
+              elevation={3}
+              sx={{ 
+                p: 3, 
+                bgcolor: 'rgba(25, 118, 210, 0.08)', 
+                borderLeft: '4px solid #1976d2',
+                display: 'flex',
+                flexDirection: {xs: 'column', sm: 'row'},
+                alignItems: {xs: 'flex-start', sm: 'center'},
+                justifyContent: 'space-between',
+                gap: 2
+              }}
+            >
+              <Box>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
+                  <AdminIcon sx={{ mr: 1 }} />
+                  Acesso Administrativo
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Como usuário administrador (admin@hybex), você tem acesso à área de gerenciamento do sistema.
+                </Typography>
+              </Box>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={() => navigate('/admin')}
+                startIcon={<AdminIcon />}
+                sx={{ whiteSpace: 'nowrap' }}
+              >
+                Acessar Área Admin
+              </Button>
+            </Paper>
+          </Box>
+        )}
 
         <StyledCard>
           <StyledTabs value={activeTab} onChange={handleTabChange}>
@@ -357,6 +513,11 @@ const Settings = () => {
                       </Box>
                     </ConfigItem>
                   ))}
+                  {configurations.testTypes.length === 0 && (
+                    <Typography variant="body2" sx={{ p: 2, textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      Nenhum tipo de teste configurado
+                    </Typography>
+                  )}
                 </List>
               </>
             )}
@@ -386,6 +547,11 @@ const Settings = () => {
                             color: '#fff'
                           }}
                         />
+                        {priority.description && (
+                          <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
+                            {priority.description}
+                          </Typography>
+                        )}
                       </Box>
                       <Box>
                         <IconButton
@@ -405,6 +571,11 @@ const Settings = () => {
                       </Box>
                     </ConfigItem>
                   ))}
+                  {configurations.priorities.length === 0 && (
+                    <Typography variant="body2" sx={{ p: 2, textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      Nenhuma prioridade configurada
+                    </Typography>
+                  )}
                 </List>
               </>
             )}
@@ -434,6 +605,11 @@ const Settings = () => {
                             color: '#fff'
                           }}
                         />
+                        {status.description && (
+                          <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
+                            {status.description}
+                          </Typography>
+                        )}
                       </Box>
                       <Box>
                         <IconButton
@@ -450,26 +626,160 @@ const Settings = () => {
                         >
                           <DeleteIcon />
                         </IconButton>
-          </Box>
+                      </Box>
                     </ConfigItem>
                   ))}
+                  {configurations.statuses.length === 0 && (
+                    <Typography variant="body2" sx={{ p: 2, textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      Nenhum status configurado
+                    </Typography>
+                  )}
                 </List>
               </>
             )}
           </Box>
         </StyledCard>
 
+        <Box mt={4}>
+          <StyledCard>
+            <Box p={3}>
+              <Typography variant="h6" gutterBottom color="var(--text-primary)">
+                Aparência
+              </Typography>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box display="flex" alignItems="center">
+                  {isDarkMode ? <DarkModeIcon color="primary" /> : <LightModeIcon color="primary" />}
+                  <Typography ml={2} color="var(--text-primary)">
+                    Modo Escuro
+                  </Typography>
+                </Box>
+                <Switch
+                  checked={isDarkMode}
+                  onChange={handleThemeChange}
+                  color="primary"
+                />
+              </Box>
+            </Box>
+          </StyledCard>
+        </Box>
+
+        <Box mt={4}>
+          <StyledCard>
+            <Box p={3}>
+              <Typography variant="h6" gutterBottom color="var(--text-primary)">
+                Banco de Dados
+              </Typography>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" color="var(--text-secondary)" paragraph>
+                  O sistema usa índices no Firebase para consultas eficientes. Se você encontrar erros relacionados a índices ausentes, 
+                  use os links abaixo para criá-los diretamente no Console do Firebase.
+                </Typography>
+              </Box>
+              
+              <Typography variant="subtitle2" gutterBottom color="var(--text-primary)">
+                Índices Necessários
+              </Typography>
+              
+              <List>
+                <ListItem sx={{ border: '1px solid var(--border-color)', borderRadius: 1, mb: 1 }}>
+                  <ListItemText 
+                    primary="Índice para Configurações Globais" 
+                    secondary="Coleção: configurations | Campos: type, isGlobal, order"
+                  />
+                  <Button 
+                    variant="outlined"
+                    size="small"
+                    component="a"
+                    href="https://console.firebase.google.com/project/_/firestore/indexes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Criar Índice
+                  </Button>
+                </ListItem>
+                
+                <ListItem sx={{ border: '1px solid var(--border-color)', borderRadius: 1, mb: 1 }}>
+                  <ListItemText 
+                    primary="Índice para Configurações de Projeto" 
+                    secondary="Coleção: configurations | Campos: type, projectId, order"
+                  />
+                  <Button 
+                    variant="outlined"
+                    size="small"
+                    component="a"
+                    href="https://console.firebase.google.com/project/_/firestore/indexes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Criar Índice
+                  </Button>
+                </ListItem>
+                
+                <ListItem sx={{ border: '1px solid var(--border-color)', borderRadius: 1, mb: 1 }}>
+                  <ListItemText 
+                    primary="Índice para Requisitos" 
+                    secondary="Coleção: requirements | Campos: projectId, createdAt"
+                  />
+                  <Button 
+                    variant="outlined"
+                    size="small"
+                    component="a"
+                    href="https://console.firebase.google.com/project/_/firestore/indexes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Criar Índice
+                  </Button>
+                </ListItem>
+                
+                <ListItem sx={{ border: '1px solid var(--border-color)', borderRadius: 1, mb: 1 }}>
+                  <ListItemText 
+                    primary="Índice para Projetos por Membro" 
+                    secondary="Coleção: projects | Campos: memberIds (array), createdAt"
+                  />
+                  <Button 
+                    variant="outlined"
+                    size="small"
+                    component="a"
+                    href="https://console.firebase.google.com/project/_/firestore/indexes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Criar Índice
+                  </Button>
+                </ListItem>
+              </List>
+              
+              <Typography variant="subtitle2" gutterBottom color="var(--text-primary)" sx={{ mt: 3 }}>
+                Instruções
+              </Typography>
+              <Typography variant="body2" color="var(--text-secondary)">
+                1. Clique no botão "Criar Índice" para abrir o Console do Firebase.
+                <br />
+                2. No Console, selecione a coleção e os campos conforme indicado acima.
+                <br />
+                3. Para índices de array (com notation "array" acima), marque como "Array contains" no console.
+                <br />
+                4. Defina todos os campos como "Ascending" para ordenação.
+                <br />
+                5. Clique em "Criar Índice" no Console do Firebase.
+                <br />
+                6. Aguarde alguns minutos para que o índice seja criado.
+              </Typography>
+            </Box>
+          </StyledCard>
+        </Box>
+
         <ConfigDialog />
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
+        <Snackbar 
+          open={snackbar.open} 
+          autoHideDuration={6000} 
           onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         >
-          <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
+          <Alert 
+            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+            severity={snackbar.severity} 
             sx={{ width: '100%' }}
           >
             {snackbar.message}

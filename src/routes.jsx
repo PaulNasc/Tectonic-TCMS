@@ -19,6 +19,8 @@ import AdminPage from './pages/AdminPage';
 import UserProfile from './pages/UserProfile';
 import TestSuiteEdit from './pages/TestSuiteEdit';
 import TestSuiteExecute from './pages/TestSuiteExecute';
+import Requirements from './pages/Requirements';
+import RequirementLinkTestCases from './pages/RequirementLinkTestCases';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -61,6 +63,10 @@ const AppRoutes = ({ toggleTheme }) => {
         <Route path="projects/:projectId/suites/:suiteId/execute" element={<TestSuiteExecute />} />
         <Route path="projects/:projectId/settings" element={<ProjectSettings />} />
         <Route path="projects/:projectId/members" element={<ProjectMembers />} />
+        
+        {/* Rotas de Requisitos e Rastreabilidade */}
+        <Route path="projects/:projectId/requirements" element={<Requirements />} />
+        <Route path="projects/:projectId/requirements/:requirementId/link-tests" element={<RequirementLinkTestCases />} />
         
         {/* Outras rotas */}
         <Route path="reports" element={<Reports />} />

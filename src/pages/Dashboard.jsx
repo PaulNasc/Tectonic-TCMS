@@ -12,10 +12,15 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip
+  Chip,
+  Button,
+  Divider
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { getTestStatistics } from '../services/testService';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { AdminPanelSettings as AdminIcon } from '@mui/icons-material';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -59,6 +64,11 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Verificar se o usuário é admin@hybex
+  const isAdminHybex = user?.email === 'admin@hybex';
 
   useEffect(() => {
     const loadStatistics = async () => {
@@ -103,6 +113,32 @@ const Dashboard = () => {
       <Typography variant="h4" gutterBottom>
         Dashboard
       </Typography>
+      
+      {/* Acesso direto à área administrativa para admin@hybex */}
+      {isAdminHybex && (
+        <Box mb={3} p={2} sx={{ 
+          bgcolor: 'background.paper', 
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'primary.main'
+        }}>
+          <Typography variant="h6" gutterBottom>
+            <AdminIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+            Acesso Administrativo
+          </Typography>
+          <Typography variant="body2" paragraph color="text.secondary">
+            Como usuário administrador (admin@hybex), você tem acesso à área de gerenciamento do sistema.
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={() => navigate('/admin')}
+            startIcon={<AdminIcon />}
+          >
+            Acessar Página de Administração
+          </Button>
+        </Box>
+      )}
 
       <Grid container spacing={3}>
         {/* Total de Testes */}

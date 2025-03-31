@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="gradientIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#4F46E5"/>
+      <stop offset="100%" stopColor="#1E40AF"/>
+    </linearGradient>
+    <linearGradient id="gradientAccentIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#06B6D4"/>
+      <stop offset="100%" stopColor="#0284C7"/>
+    </linearGradient>
+    <filter id="glowIcon">
+      <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g>
+    {/* Hexágono de fundo */}
+    <path 
+      d="M16 4 L26 10 L26 22 L16 28 L6 22 L6 10 Z" 
+      fill="none" 
+      stroke="url(#gradientIcon)" 
+      strokeWidth="2"
+      filter="url(#glowIcon)"
+    />
+    {/* Símbolo T estilizado */}
+    <path 
+      d="M12 12 L20 12 M16 12 L16 22" 
+      stroke="url(#gradientAccentIcon)" 
+      strokeWidth="2"
+      strokeLinecap="round"
+      filter="url(#glowIcon)"
+    />
+  </g>
+</svg> 

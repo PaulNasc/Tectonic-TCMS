@@ -26,7 +26,8 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  ListItemIcon
+  ListItemIcon,
+  Container
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -38,7 +39,8 @@ import {
   Edit as EditIcon,
   Restore as RestoreIcon,
   Archive as ArchiveIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Article as RequirementsIcon
 } from '@mui/icons-material';
 import { projectService } from '../services/projectService';
 import { testSuiteService } from '../services/testSuiteService';
@@ -217,6 +219,36 @@ const ProjectView = () => {
     };
   };
 
+  const handleAddSuiteClick = () => {
+    setCreateSuiteDialog(true);
+  };
+
+  const renderNavigationButtons = () => (
+    <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+      <Button
+        variant="outlined"
+        startIcon={<RequirementsIcon />}
+        onClick={() => navigate(`/projects/${id}/requirements`)}
+      >
+        Requisitos
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<PeopleIcon />}
+        onClick={() => navigate(`/projects/${id}/members`)}
+      >
+        Membros
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<SettingsIcon />}
+        onClick={() => navigate(`/projects/${id}/settings`)}
+      >
+        Configurações
+      </Button>
+    </Box>
+  );
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -277,6 +309,10 @@ const ProjectView = () => {
                 <Typography variant="body1" color="text.secondary" paragraph>
                   {project.description}
                 </Typography>
+                
+                {/* Botões de navegação */}
+                {renderNavigationButtons()}
+                
                 <Box display="flex" gap={1}>
                   <Chip
                     icon={<PeopleIcon />}
@@ -297,18 +333,11 @@ const ProjectView = () => {
               </Grid>
               <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                 <Button
-                  variant="outlined"
-                  startIcon={<PeopleIcon />}
-                  onClick={() => navigate(`/projects/${id}/members`)}
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddSuiteClick}
                 >
-                  Membros
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<SettingsIcon />}
-                  onClick={() => navigate(`/projects/${id}/settings`)}
-                >
-                  Configurações
+                  Nova Suite de Testes
                 </Button>
               </Grid>
             </Grid>

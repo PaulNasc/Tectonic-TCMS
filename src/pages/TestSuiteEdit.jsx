@@ -426,17 +426,17 @@ const TestSuiteEdit = () => {
                   <ListItemText
                     primary={testCase.name || testCase.title}
                     secondary={
-                      <React.Fragment>
-                        <Typography component="span" variant="body2" color="text.primary">
+                      <>
+                        <Box component="span" sx={{ display: 'block' }}>
                           Prioridade: {testCase.priority || 'Média'}
-                        </Typography>
+                        </Box>
                         {testCase.description && (
-                          <Typography variant="body2" color="text.secondary">
+                          <Box component="span" sx={{ display: 'block' }}>
                             {testCase.description.substring(0, 100)}
                             {testCase.description.length > 100 ? '...' : ''}
-                          </Typography>
+                          </Box>
                         )}
-                      </React.Fragment>
+                      </>
                     }
                   />
                   <ListItemSecondaryAction>

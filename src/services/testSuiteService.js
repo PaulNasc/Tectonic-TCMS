@@ -14,18 +14,55 @@ export const testSuiteService = {
       const { data: project, error: projectError } = await projectService.getProjectById(suiteData.projectId);
       if (projectError) throw new Error(projectError);
 
+      // Obter configurações aplicáveis para o projeto
+      let configData = {};
+      try {
+        const { data: configService } = await import('./configService');
+        if (configService) {
+          const { data: testTypes } = await configService.getApplicableConfigs('testTypes', suiteData.projectId);
+          const { data: priorities } = await configService.getApplicableConfigs('priorities', suiteData.projectId);
+          const { data: statuses } = await configService.getApplicableConfigs('statuses', suiteData.projectId);
+          
+          configData = {
+            testTypes,
+            priorities,
+            statuses
+          };
+        }
+      } catch (err) {
+        console.warn('Erro ao obter configurações, usando padrões:', err);
+      }
+
       const docRef = await addDoc(collection(db, COLLECTION), {
         ...suiteData,
         status: 'active',
         testCases: [],
         createdAt: new Date(),
         updatedAt: new Date(),
+        tags: suiteData.tags || [],
+        // Estatísticas expandidas
         statistics: {
           totalTests: 0,
           passRate: 0,
           lastExecution: null,
-          automationRate: 0
-        }
+          automationRate: 0,
+          executedTests: 0,
+          passCount: 0,
+          failCount: 0,
+          blockedCount: 0,
+          totalExecutions: 0
+        },
+        // Histórico de ações
+        history: [
+          {
+            action: 'create',
+            timestamp: new Date(),
+            user: suiteData.createdBy,
+            details: 'Suite de teste criada'
+          }
+        ],
+        // Matriz de rastreabilidade
+        requirementLinks: []
       });
 
       const newSuite = {
@@ -35,19 +72,39 @@ export const testSuiteService = {
         testCases: [],
         createdAt: new Date(),
         updatedAt: new Date(),
+        tags: suiteData.tags || [],
         statistics: {
           totalTests: 0,
           passRate: 0,
           lastExecution: null,
-          automationRate: 0
-        }
+          automationRate: 0,
+          executedTests: 0,
+          passCount: 0,
+          failCount: 0,
+          blockedCount: 0,
+          totalExecutions: 0
+        },
+        history: [
+          {
+            action: 'create',
+            timestamp: new Date(),
+            user: suiteData.createdBy,
+            details: 'Suite de teste criada'
+          }
+        ],
+        requirementLinks: []
       };
 
       console.log('Suite criada:', newSuite);
 
-      // Atualizar a lista de suítes no projeto
+      // Atualizar a lista de suítes no projeto e incrementar contadores
       await projectService.updateProject(suiteData.projectId, {
         testSuites: [...(project.testSuites || []), docRef.id]
+      });
+      
+      // Atualizar estatísticas do projeto
+      await projectService.updateProjectStatistics(suiteData.projectId, {
+        totalSuites: 1
       });
 
       return { data: newSuite, error: null };
@@ -166,78 +223,132 @@ export const testSuiteService = {
     }
   },
 
-  async createTestCase(suiteId, testCaseData, userId) {
+  async createTestCase(suiteId, testCaseData) {
     try {
-      console.log('Criando caso de teste na suite:', suiteId, testCaseData);
-      
-      // Buscar a suite para garantir que existe e obter o projectId
-      const suiteDoc = await getDoc(doc(db, COLLECTION, suiteId));
+      console.log('Criando caso de teste em suite:', suiteId, testCaseData);
+
+      // Validar dados obrigatórios
+      if (!testCaseData.name) {
+        throw new Error('Nome do caso de teste é obrigatório');
+      }
+
+      const suiteRef = doc(db, COLLECTION, suiteId);
+      const suiteDoc = await getDoc(suiteRef);
+
       if (!suiteDoc.exists()) {
         throw new Error('Suite de teste não encontrada');
       }
-      
+
       const suiteData = suiteDoc.data();
       const projectId = suiteData.projectId;
       
-      // Preparar os dados do caso de teste
-      const testCase = {
-        id: uuidv4(), // Gera um ID único
-        name: testCaseData.name,
-        description: testCaseData.description,
-        priority: testCaseData.priority || 'Média',
-        status: 'Não Executado',
-        type: testCaseData.type || 'Manual',
-        prerequisites: testCaseData.prerequisites || [],
-        steps: testCaseData.steps || [],
-        expectedResults: testCaseData.expectedResults || '',
-        createdBy: userId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastExecution: null,
-        executions: []
-      };
-      
-      // Adicionar o caso de teste à suite
-      const testCases = suiteData.testCases || [];
-      testCases.push(testCase);
-      
-      // Atualizar a suite com o novo caso de teste
-      await updateDoc(doc(db, COLLECTION, suiteId), {
-        testCases,
-        updatedAt: new Date()
-      });
-      
-      // Atualizar estatísticas do projeto
+      // Validar e normalizar configurações (tipo, prioridade, status)
+      let validatedTestCase = { ...testCaseData };
       try {
-        if (projectId) {
-          const projectRef = doc(db, 'projects', projectId);
-          const projectDoc = await getDoc(projectRef);
+        const { data: configService } = await import('./configService');
+        if (configService) {
+          // Validar tipo de teste
+          validatedTestCase = await configService.validateConfigValue(
+            validatedTestCase, 'type', projectId
+          );
           
-          if (projectDoc.exists()) {
-            const projectData = projectDoc.data();
-            const statistics = projectData.statistics || {
-              totalTestCases: 0,
-              passRate: 0,
-              lastExecution: null
-            };
-            
-            // Incrementar total de casos de teste
-            statistics.totalTestCases = (statistics.totalTestCases || 0) + 1;
-            
-            await updateDoc(projectRef, {
-              statistics,
-              updatedAt: new Date()
-            });
-            
-            console.log('Estatísticas do projeto atualizadas:', statistics);
-          }
+          // Validar prioridade
+          validatedTestCase = await configService.validateConfigValue(
+            validatedTestCase, 'priority', projectId
+          );
         }
       } catch (err) {
-        console.error('Erro ao atualizar estatísticas do projeto:', err);
-        // Não interrompe o fluxo principal se houver erro
+        console.warn('Erro ao validar configurações, usando valores fornecidos:', err);
       }
+
+      // Gerar ID único para o caso de teste
+      const testCaseId = uuidv4();
+
+      const newTestCase = {
+        id: testCaseId,
+        name: validatedTestCase.name,
+        description: validatedTestCase.description || '',
+        steps: validatedTestCase.steps || [],
+        expectedResults: validatedTestCase.expectedResults || '',
+        prerequisites: validatedTestCase.prerequisites || [],
+        type: validatedTestCase.type || 'Manual',
+        priority: validatedTestCase.priority || 'Média',
+        status: 'Pendente',
+        tags: validatedTestCase.tags || [],
+        requirementIds: validatedTestCase.requirementIds || [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: validatedTestCase.createdBy,
+        history: [
+          {
+            action: 'create',
+            timestamp: new Date(),
+            user: validatedTestCase.createdBy,
+            details: 'Caso de teste criado'
+          }
+        ]
+      };
+
+      // Adicionar o caso de teste à suíte
+      const testCases = [...suiteData.testCases, newTestCase];
       
-      return { data: testCase, error: null };
+      // Atualizar estatísticas da suíte
+      const isAutomated = newTestCase.type === 'Automatizado';
+      const statistics = suiteData.statistics || {};
+      const totalTests = (statistics.totalTests || 0) + 1;
+      const automatedTests = (statistics.automatedTests || 0) + (isAutomated ? 1 : 0);
+      const automationRate = totalTests > 0 ? (automatedTests / totalTests) * 100 : 0;
+      
+      // Registrar no histórico da suíte
+      const history = suiteData.history || [];
+      history.push({
+        action: 'add_test_case',
+        timestamp: new Date(),
+        user: validatedTestCase.createdBy,
+        details: `Caso de teste "${newTestCase.name}" adicionado`,
+        testCaseId
+      });
+
+      // Atualizar a suíte com o novo caso de teste e estatísticas atualizadas
+      await updateDoc(suiteRef, {
+        testCases,
+        updatedAt: new Date(),
+        'statistics.totalTests': totalTests,
+        'statistics.automatedTests': automatedTests,
+        'statistics.automationRate': automationRate,
+        history
+      });
+
+      // Atualizar estatísticas do projeto
+      try {
+        await projectService.updateProjectStatistics(projectId, {
+          totalTestCases: 1,
+          automatedTestCases: isAutomated ? 1 : 0
+        });
+      } catch (err) {
+        console.warn('Erro ao atualizar estatísticas do projeto:', err);
+      }
+
+      // Vincular caso de teste a requisitos, se especificados
+      if (newTestCase.requirementIds && newTestCase.requirementIds.length > 0) {
+        try {
+          const { data: traceabilityService } = await import('./traceabilityService');
+          if (traceabilityService) {
+            for (const reqId of newTestCase.requirementIds) {
+              await traceabilityService.linkTestCaseToRequirement(
+                reqId, 
+                testCaseId, 
+                { name: newTestCase.name, suiteId }, 
+                validatedTestCase.createdBy
+              );
+            }
+          }
+        } catch (err) {
+          console.warn('Erro ao vincular caso de teste a requisitos:', err);
+        }
+      }
+
+      return { data: newTestCase, error: null };
     } catch (error) {
       console.error('Erro ao criar caso de teste:', error);
       return { data: null, error: error.message };
@@ -747,58 +858,149 @@ export const testSuiteService = {
     }
   },
 
-  // Novo método compatível com a nova interface
-  async createTestCase(suiteId, testCaseData) {
+  // Método para adicionar tags a uma suíte de teste
+  async addTagsToSuite(suiteId, tags, user) {
     try {
-      console.log(`Criando caso de teste na suíte ${suiteId}:`, testCaseData);
-      const suiteRef = doc(db, 'testSuites', suiteId);
+      const suiteRef = doc(db, COLLECTION, suiteId);
+      const suiteDoc = await getDoc(suiteRef);
       
-      // Validar dados do caso de teste
-      if (!testCaseData.name) {
-        throw new Error('O nome do caso de teste é obrigatório');
+      if (!suiteDoc.exists()) {
+        throw new Error('Suite de teste não encontrada');
       }
       
-      // Preparar caso de teste com campos padrão
-      const newTestCase = {
-        id: Math.random().toString(36).substring(2, 15),
-        title: testCaseData.name,
-        description: testCaseData.description || '',
-        steps: testCaseData.steps || [],
-        expectedResults: testCaseData.expectedResults || '',
-        prerequisites: testCaseData.prerequisites || [],
-        priority: testCaseData.priority || 'medium',
-        status: testCaseData.status || 'active',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
+      const suiteData = suiteDoc.data();
+      const currentTags = suiteData.tags || [];
       
-      // Obter a suíte atual
-      const suiteSnap = await getDoc(suiteRef);
+      // Filtrar tags que já existem
+      const newTags = tags.filter(tag => 
+        !currentTags.some(t => t.id === tag.id)
+      );
       
-      if (!suiteSnap.exists()) {
-        throw new Error('Suite não encontrada');
+      if (newTags.length === 0) {
+        return { data: suiteData, error: 'Todas as tags já existem na suite' };
       }
       
-      const suiteData = suiteSnap.data();
-      const testCases = suiteData.testCases || [];
+      // Adicionar novas tags
+      const updatedTags = [...currentTags, ...newTags];
       
-      // Adicionar o novo caso de teste
-      const updatedTestCases = [...testCases, newTestCase];
-      
-      // Atualizar suíte com novo caso de teste
-      await updateDoc(suiteRef, {
-        testCases: updatedTestCases,
-        updatedAt: serverTimestamp()
+      // Registrar no histórico
+      const history = suiteData.history || [];
+      history.push({
+        action: 'add_tags',
+        timestamp: new Date(),
+        user,
+        details: `Tags adicionadas: ${newTags.map(t => t.name).join(', ')}`,
+        tags: newTags
       });
       
-      // Obter suíte atualizada
-      const { data } = await this.getTestSuiteById(suiteId);
-      console.log(`Caso de teste criado com sucesso na suíte:`, data);
+      await updateDoc(suiteRef, {
+        tags: updatedTags,
+        updatedAt: new Date(),
+        history
+      });
       
-      return { data };
+      return { 
+        data: { 
+          ...suiteData, 
+          tags: updatedTags,
+          history 
+        }, 
+        error: null 
+      };
     } catch (error) {
-      console.error('Erro ao criar caso de teste:', error);
-      return { error: error.message };
+      console.error('Erro ao adicionar tags à suite:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Método para remover tags de uma suíte de teste
+  async removeTagFromSuite(suiteId, tagId, user) {
+    try {
+      const suiteRef = doc(db, COLLECTION, suiteId);
+      const suiteDoc = await getDoc(suiteRef);
+      
+      if (!suiteDoc.exists()) {
+        throw new Error('Suite de teste não encontrada');
+      }
+      
+      const suiteData = suiteDoc.data();
+      const currentTags = suiteData.tags || [];
+      
+      // Encontrar a tag a ser removida
+      const tagToRemove = currentTags.find(t => t.id === tagId);
+      
+      if (!tagToRemove) {
+        return { data: suiteData, error: 'Tag não encontrada na suite' };
+      }
+      
+      // Remover a tag
+      const updatedTags = currentTags.filter(t => t.id !== tagId);
+      
+      // Registrar no histórico
+      const history = suiteData.history || [];
+      history.push({
+        action: 'remove_tag',
+        timestamp: new Date(),
+        user,
+        details: `Tag removida: ${tagToRemove.name}`,
+        tagId,
+        tagName: tagToRemove.name
+      });
+      
+      await updateDoc(suiteRef, {
+        tags: updatedTags,
+        updatedAt: new Date(),
+        history
+      });
+      
+      return { 
+        data: { 
+          ...suiteData, 
+          tags: updatedTags,
+          history 
+        }, 
+        error: null 
+      };
+    } catch (error) {
+      console.error('Erro ao remover tag da suite:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Método para adicionar/atualizar vínculos com requisitos
+  async updateRequirementLinks(suiteId, requirementLinks, user) {
+    try {
+      const suiteRef = doc(db, COLLECTION, suiteId);
+      const suiteDoc = await getDoc(suiteRef);
+      
+      if (!suiteDoc.exists()) {
+        throw new Error('Suite de teste não encontrada');
+      }
+      
+      const suiteData = suiteDoc.data();
+      
+      // Atualizar links com requisitos
+      await updateDoc(suiteRef, {
+        requirementLinks,
+        updatedAt: new Date(),
+        history: arrayUnion({
+          action: 'update_requirement_links',
+          timestamp: new Date(),
+          user,
+          details: 'Vínculos com requisitos atualizados'
+        })
+      });
+      
+      return { 
+        data: { 
+          ...suiteData, 
+          requirementLinks
+        }, 
+        error: null 
+      };
+    } catch (error) {
+      console.error('Erro ao atualizar vínculos com requisitos:', error);
+      return { data: null, error: error.message };
     }
   },
 };

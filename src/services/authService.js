@@ -35,29 +35,37 @@ const handleAuthError = (error) => {
 
 export const signIn = async (email, password) => {
   try {
+    console.log('Tentando fazer login com:', email);
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    console.log('Login bem-sucedido:', userCredential.user.uid);
     return userCredential.user;
   } catch (error) {
+    console.error('Erro ao fazer login:', error);
     throw handleAuthError(error);
   }
 };
 
 export const signUp = async ({ email, password, ...userData }) => {
   try {
+    console.log('Tentando criar usuário:', email);
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, {
       displayName: userData.name
     });
+    console.log('Usuário criado com sucesso:', userCredential.user.uid);
     return userCredential.user;
   } catch (error) {
+    console.error('Erro ao criar usuário:', error);
     throw handleAuthError(error);
   }
 };
 
 export const logout = async () => {
   try {
+    console.log('Realizando logout');
     await signOut(auth);
   } catch (error) {
+    console.error('Erro ao fazer logout:', error);
     throw handleAuthError(error);
   }
 };
@@ -68,8 +76,10 @@ export const getCurrentUser = () => {
 
 export const resetPassword = async (email) => {
   try {
+    console.log('Enviando email de recuperação para:', email);
     const auth = getAuth();
     await sendPasswordResetEmail(auth, email);
+    console.log('Email de recuperação enviado com sucesso');
     return { error: null };
   } catch (error) {
     console.error('Erro ao enviar email de recuperação de senha:', error);
@@ -82,6 +92,8 @@ export const updateUserProfile = async (userData) => {
     const user = auth.currentUser;
     if (!user) throw new Error('Usuário não autenticado');
 
+    console.log('Atualizando perfil do usuário:', user.uid);
+    
     if (userData.email) {
       await updateEmail(user, userData.email);
     }
@@ -91,7 +103,10 @@ export const updateUserProfile = async (userData) => {
     if (userData.name) {
       await updateProfile(user, { displayName: userData.name });
     }
+    
+    console.log('Perfil atualizado com sucesso');
   } catch (error) {
+    console.error('Erro ao atualizar perfil:', error);
     throw handleAuthError(error);
   }
 }; 

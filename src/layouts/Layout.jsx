@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Outlet, useParams } from 'react-router-dom';
 import styled from '@emotion/styled';
 import {
   Box,
@@ -18,7 +18,8 @@ import {
   MenuItem,
   Avatar,
   Tooltip,
-  useTheme
+  useTheme,
+  Collapse
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -31,13 +32,20 @@ import {
   ChevronLeft as ChevronLeftIcon,
   Brightness4 as Brightness4Icon,
   Brightness7 as Brightness7Icon,
-  AdminPanelSettings as AdminPanelSettingsIcon
+  AdminPanelSettings as AdminPanelSettingsIcon,
+  Home as HomeIcon,
+  Article as RequirementsIcon,
+  GridView as MatrixIcon,
+  People as MembersIcon,
+  PlayArrow as ExecuteIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
-// Logo SVG com nome correto "TECTONIC"
+// Novo componente LogoSvg com design mais moderno
 const LogoSvg = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="140" height="60" viewBox="0 0 140 60">
+  <svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60">
     <defs>
       <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#4F46E5" />
@@ -47,13 +55,55 @@ const LogoSvg = () => (
         <stop offset="0%" stopColor="#06B6D4" />
         <stop offset="100%" stopColor="#0284C7" />
       </linearGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
     </defs>
     <g>
-      <circle cx="30" cy="30" r="24" fill="none" stroke="url(#gradient)" strokeWidth="3" />
-      <path d="M18 30 L42 30 M30 18 L30 42" stroke="url(#gradient)" strokeWidth="3" />
-      <text x="60" y="28" fill="url(#gradient)" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="18">TECTONIC</text>
-      <text x="60" y="45" fill="url(#gradientAccent)" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="14">TCMS</text>
-      <rect x="60" y="32" width="70" height="2" fill="url(#gradientAccent)" />
+      {/* Hexágono de fundo */}
+      <path 
+        d="M30 10 L45 20 L45 40 L30 50 L15 40 L15 20 Z" 
+        fill="none" 
+        stroke="url(#gradient)" 
+        strokeWidth="2"
+        filter="url(#glow)"
+      />
+      {/* Símbolo T estilizado */}
+      <path 
+        d="M25 22 L35 22 M30 22 L30 38" 
+        stroke="url(#gradientAccent)" 
+        strokeWidth="3"
+        strokeLinecap="round"
+        filter="url(#glow)"
+      />
+      {/* Texto TECTONIC com efeito moderno */}
+      <text x="55" y="35" 
+        fill="url(#gradient)" 
+        fontFamily="Arial, sans-serif" 
+        fontWeight="bold" 
+        fontSize="22"
+        letterSpacing="1"
+      >TECTONIC</text>
+      {/* Texto TCMS com efeito de destaque */}
+      <text x="55" y="50" 
+        fill="url(#gradientAccent)" 
+        fontFamily="Arial, sans-serif" 
+        fontWeight="bold" 
+        fontSize="16"
+        letterSpacing="2"
+      >TCMS</text>
+      {/* Linha decorativa com gradiente */}
+      <path 
+        d="M55 38 L160 38" 
+        stroke="url(#gradientAccent)" 
+        strokeWidth="2"
+        strokeDasharray="1 3"
+        filter="url(#glow)"
+      />
     </g>
   </svg>
 );
@@ -158,16 +208,22 @@ const StyledListItem = styled(ListItem)`
 const Layout = ({ toggleTheme }) => {
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [projectMenuOpen, setProjectMenuOpen] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const { projectId } = useParams();
 
   console.log('Layout renderizado, usuário atual:', user);
   console.log('Email do usuário:', user?.email);
   console.log('Função do usuário:', user?.role);
   console.log('É admin@hybex?', user?.email === 'admin@hybex');
   console.log('Tem role admin?', user?.role === 'admin');
+  console.log('ID do projeto atual:', projectId);
+
+  // Determinar se estamos em uma rota de projeto
+  const isProjectRoute = location.pathname.includes('/projects/') && projectId;
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -194,7 +250,11 @@ const Layout = ({ toggleTheme }) => {
     }
   };
 
-  const menuItems = [
+  const toggleProjectMenu = () => {
+    setProjectMenuOpen(!projectMenuOpen);
+  };
+
+  const mainMenuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Projetos', icon: <ProjectsIcon />, path: '/projects' },
     { text: 'Relatórios', icon: <ReportsIcon />, path: '/reports' },
@@ -204,7 +264,14 @@ const Layout = ({ toggleTheme }) => {
     ] : [])
   ];
 
-  console.log('Itens do menu gerados:', menuItems);
+  const projectMenuItems = isProjectRoute ? [
+    { text: 'Requisitos', icon: <RequirementsIcon />, path: `/projects/${projectId}/requirements` },
+    { text: 'Membros', icon: <MembersIcon />, path: `/projects/${projectId}/members` },
+    { text: 'Configurações', icon: <SettingsIcon />, path: `/projects/${projectId}/settings` }
+  ] : [];
+
+  console.log('Itens do menu gerados:', mainMenuItems);
+  console.log('Itens do menu de projeto:', projectMenuItems);
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -212,31 +279,77 @@ const Layout = ({ toggleTheme }) => {
         <Toolbar>
           <IconButton
             color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
+            aria-label="abrir menu"
+            onClick={open ? handleDrawerClose : handleDrawerOpen}
             edge="start"
-            sx={{ mr: 2, ...(open && { display: 'none' }) }}
+            sx={{ 
+              mr: 2,
+              ...(open && { transform: 'rotate(360deg)' }),
+              transition: 'transform 0.5s ease-in-out'
+            }}
           >
-            <MenuIcon />
+            <HomeIcon />
           </IconButton>
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
             <LogoSvg />
           </Box>
-          <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">
-            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
-          <Tooltip title="Configurações de conta">
-            <IconButton
-              onClick={handleMenu}
-              sx={{ ml: 2 }}
+          <Box sx={{ flexGrow: 0 }}>
+            <Tooltip title="Alternar tema">
+              <IconButton onClick={toggleTheme} color="inherit">
+                {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Configurações da conta">
+              <IconButton
+                size="large"
+                aria-label="conta do usuário"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={handleMenu}
+                color="inherit"
+              >
+                <Avatar sx={{ width: 32, height: 32 }}>
+                  {user?.email?.charAt(0).toUpperCase()}
+                </Avatar>
+              </IconButton>
+            </Tooltip>
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={Boolean(anchorEl)}
+              onClose={handleClose}
             >
-              <Avatar 
-                alt={user?.name || 'User'}
-                src={user?.photoURL}
-                sx={{ width: 32, height: 32 }}
-              />
-            </IconButton>
-          </Tooltip>
+              <MenuItem onClick={() => { handleClose(); navigate('/profile'); }}>
+                <ListItemIcon>
+                  <PersonIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Perfil</ListItemText>
+              </MenuItem>
+              {(user?.role === 'admin' || user?.email === 'admin@hybex') && (
+                <MenuItem onClick={() => { handleClose(); navigate('/admin'); }}>
+                  <ListItemIcon>
+                    <AdminPanelSettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Gerenciar</ListItemText>
+                </MenuItem>
+              )}
+              <MenuItem onClick={handleLogout}>
+                <ListItemIcon>
+                  <LogoutIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Sair</ListItemText>
+              </MenuItem>
+            </Menu>
+          </Box>
         </Toolbar>
       </AppBarStyled>
       
@@ -254,34 +367,47 @@ const Layout = ({ toggleTheme }) => {
         open={open}
       >
         <DrawerHeader>
-          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <Box sx={{ width: 60, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 60 60">
-                <defs>
-                  <linearGradient id="gradientIcon" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#4F46E5" />
-                    <stop offset="100%" stopColor="#1E40AF" />
-                  </linearGradient>
-                </defs>
-                <g>
-                  <circle cx="30" cy="30" r="24" fill="none" stroke="url(#gradientIcon)" strokeWidth="3" />
-                  <path d="M18 30 L42 30 M30 18 L30 42" stroke="url(#gradientIcon)" strokeWidth="3" />
-                </g>
-              </svg>
-            </Box>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            width: '100%',
+            position: 'relative',
+            px: 2
+          }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                background: 'linear-gradient(45deg, #4F46E5, #1E40AF)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                color: 'transparent',
+                textAlign: 'center',
+                flex: 1
+              }}
+            >
+              Painel
+            </Typography>
+            <IconButton 
+              onClick={handleDrawerClose}
+              sx={{
+                position: 'absolute',
+                right: 8
+              }}
+            >
+              <ChevronLeftIcon />
+            </IconButton>
           </Box>
-          <IconButton onClick={handleDrawerClose}>
-            <ChevronLeftIcon />
-          </IconButton>
         </DrawerHeader>
         <Divider />
         <List>
-          {menuItems.map((item) => (
+          {mainMenuItems.map((item) => (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
-              onClick={() => navigate(item.path)}
+                onClick={() => navigate(item.path)}
                 selected={location.pathname === item.path}
-            >
+              >
                 <ListItemIcon>
                   {item.icon}
                 </ListItemIcon>
@@ -290,56 +416,46 @@ const Layout = ({ toggleTheme }) => {
             </ListItem>
           ))}
         </List>
-      </Drawer>
-
-      <Menu
-        id="user-menu"
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
-        <MenuItem onClick={() => {
-          navigate('/profile');
-          handleClose();
-        }}>
-          <ListItemIcon>
-            <PersonIcon fontSize="small" />
-          </ListItemIcon>
-          <Typography>Perfil</Typography>
-        </MenuItem>
-
-        <MenuItem onClick={() => {
-          navigate('/settings');
-          handleClose();
-        }}>
-          <ListItemIcon>
-            <SettingsIcon fontSize="small" />
-          </ListItemIcon>
-          <Typography>Configurações</Typography>
-        </MenuItem>
-
-        {(user?.role === 'admin' || user?.email === 'admin@hybex') && (
-          <MenuItem onClick={() => {
-            console.log('Clicou em Gerenciar, navegando para /admin');
-            navigate('/admin');
-            handleClose();
-          }}>
-            <ListItemIcon>
-              <AdminPanelSettingsIcon fontSize="small" />
-            </ListItemIcon>
-            <Typography>Gerenciar</Typography>
-          </MenuItem>
+        
+        {isProjectRoute && (
+          <>
+            <Divider />
+            <ListItem disablePadding>
+              <ListItemButton onClick={toggleProjectMenu}>
+                <ListItemIcon>
+                  <ProjectsIcon color="primary" />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Projeto Atual" 
+                  primaryTypographyProps={{ 
+                    color: 'primary',
+                    fontWeight: 'bold'
+                  }} 
+                />
+                {projectMenuOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </ListItemButton>
+            </ListItem>
+            <Collapse in={projectMenuOpen} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {projectMenuItems.map((item) => (
+                  <ListItem key={item.text} disablePadding>
+                    <ListItemButton
+                      onClick={() => navigate(item.path)}
+                      selected={location.pathname === item.path}
+                      sx={{ pl: 4 }}
+                    >
+                      <ListItemIcon>
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={item.text} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+            </Collapse>
+          </>
         )}
-
-        <Divider />
-
-        <MenuItem onClick={handleLogout}>
-          <ListItemIcon>
-            <LogoutIcon fontSize="small" color="error" />
-          </ListItemIcon>
-          <Typography color="error">Sair</Typography>
-        </MenuItem>
-      </Menu>
+      </Drawer>
 
       <Main open={open}>
         <DrawerHeader />
