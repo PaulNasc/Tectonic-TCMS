@@ -19,7 +19,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  ListItemSecondary,
   Chip,
   useTheme
 } from '@mui/material';
