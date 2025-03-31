@@ -44,6 +44,7 @@ import { traceabilityService } from '../services/traceabilityService';
 import { projectService } from '../services/projectService';
 import { configService } from '../services/configService';
 import TraceabilityMatrix from '../components/TraceabilityMatrix';
+import CoverageDashboard from '../components/CoverageDashboard';
 
 // Componente TabPanel - para exibir conteúdo das abas
 const TabPanel = (props) => {
@@ -347,6 +348,7 @@ const Requirements = () => {
         >
           <Tab label="Requisitos" id="requirements-tab-0" />
           <Tab label="Matriz de Rastreabilidade" id="requirements-tab-1" />
+          <Tab label="Dashboard de Cobertura" id="requirements-tab-2" />
         </Tabs>
       </Box>
       
@@ -466,6 +468,11 @@ const Requirements = () => {
       {/* Aba da Matriz de Rastreabilidade */}
       <TabPanel value={activeTab} index={1}>
         <TraceabilityMatrix projectId={projectId} />
+      </TabPanel>
+      
+      {/* Aba do Dashboard de Cobertura */}
+      <TabPanel value={activeTab} index={2}>
+        <CoverageDashboard projectId={projectId} />
       </TabPanel>
       
       {/* Diálogo para adicionar/editar requisito */}

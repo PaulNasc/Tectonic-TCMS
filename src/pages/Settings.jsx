@@ -663,111 +663,94 @@ const Settings = () => {
           </StyledCard>
         </Box>
 
-        <Box mt={4}>
-          <StyledCard>
-            <Box p={3}>
-              <Typography variant="h6" gutterBottom color="var(--text-primary)">
-                Banco de Dados
+        <Box sx={{ mt: 3, mb: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Banco de Dados
+          </Typography>
+          <Typography variant="body2" color="text.secondary" paragraph>
+            O Firebase Firestore requer índices compostos para consultas complexas. 
+            Clique nos botões abaixo para criar os índices necessários diretamente no console do Firebase.
+          </Typography>
+          
+          <Paper sx={{ p: 2, mb: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Índices necessários para o sistema de rastreabilidade
+            </Typography>
+            
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Índice para Requisitos
               </Typography>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="body2" color="var(--text-secondary)" paragraph>
-                  O sistema usa índices no Firebase para consultas eficientes. Se você encontrar erros relacionados a índices ausentes, 
-                  use os links abaixo para criá-los diretamente no Console do Firebase.
-                </Typography>
-              </Box>
-              
-              <Typography variant="subtitle2" gutterBottom color="var(--text-primary)">
-                Índices Necessários
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Permite listar requisitos ordenados por data de criação.
               </Typography>
-              
-              <List>
-                <ListItem sx={{ border: '1px solid var(--border-color)', borderRadius: 1, mb: 1 }}>
-                  <ListItemText 
-                    primary="Índice para Configurações Globais" 
-                    secondary="Coleção: configurations | Campos: type, isGlobal, order"
-                  />
-                  <Button 
-                    variant="outlined"
-                    size="small"
-                    component="a"
-                    href="https://console.firebase.google.com/project/_/firestore/indexes"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Criar Índice
-                  </Button>
-                </ListItem>
-                
-                <ListItem sx={{ border: '1px solid var(--border-color)', borderRadius: 1, mb: 1 }}>
-                  <ListItemText 
-                    primary="Índice para Configurações de Projeto" 
-                    secondary="Coleção: configurations | Campos: type, projectId, order"
-                  />
-                  <Button 
-                    variant="outlined"
-                    size="small"
-                    component="a"
-                    href="https://console.firebase.google.com/project/_/firestore/indexes"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Criar Índice
-                  </Button>
-                </ListItem>
-                
-                <ListItem sx={{ border: '1px solid var(--border-color)', borderRadius: 1, mb: 1 }}>
-                  <ListItemText 
-                    primary="Índice para Requisitos" 
-                    secondary="Coleção: requirements | Campos: projectId, createdAt"
-                  />
-                  <Button 
-                    variant="outlined"
-                    size="small"
-                    component="a"
-                    href="https://console.firebase.google.com/project/_/firestore/indexes"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Criar Índice
-                  </Button>
-                </ListItem>
-                
-                <ListItem sx={{ border: '1px solid var(--border-color)', borderRadius: 1, mb: 1 }}>
-                  <ListItemText 
-                    primary="Índice para Projetos por Membro" 
-                    secondary="Coleção: projects | Campos: memberIds (array), createdAt"
-                  />
-                  <Button 
-                    variant="outlined"
-                    size="small"
-                    component="a"
-                    href="https://console.firebase.google.com/project/_/firestore/indexes"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Criar Índice
-                  </Button>
-                </ListItem>
-              </List>
-              
-              <Typography variant="subtitle2" gutterBottom color="var(--text-primary)" sx={{ mt: 3 }}>
-                Instruções
-              </Typography>
-              <Typography variant="body2" color="var(--text-secondary)">
-                1. Clique no botão "Criar Índice" para abrir o Console do Firebase.
-                <br />
-                2. No Console, selecione a coleção e os campos conforme indicado acima.
-                <br />
-                3. Para índices de array (com notation "array" acima), marque como "Array contains" no console.
-                <br />
-                4. Defina todos os campos como "Ascending" para ordenação.
-                <br />
-                5. Clique em "Criar Índice" no Console do Firebase.
-                <br />
-                6. Aguarde alguns minutos para que o índice seja criado.
-              </Typography>
+              <Button 
+                variant="outlined" 
+                size="small"
+                component="a"
+                href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=Coleção:requirements,Campo:projectId,Tipo:ascending,Campo:createdAt,Tipo:descending"
+                target="_blank"
+                rel="noopener"
+              >
+                Criar Índice
+              </Button>
             </Box>
-          </StyledCard>
+            
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Índice para Configurações Globais
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Permite consultar configurações globais por tipo e ordem.
+              </Typography>
+              <Button 
+                variant="outlined" 
+                size="small"
+                component="a"
+                href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=Coleção:configurations,Campo:type,Tipo:ascending,Campo:isGlobal,Tipo:ascending,Campo:order,Tipo:ascending"
+                target="_blank"
+                rel="noopener"
+              >
+                Criar Índice
+              </Button>
+            </Box>
+            
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Índice para Configurações de Projeto
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Permite consultar configurações específicas de projeto por tipo e ordem.
+              </Typography>
+              <Button 
+                variant="outlined" 
+                size="small"
+                component="a"
+                href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=Coleção:configurations,Campo:type,Tipo:ascending,Campo:projectId,Tipo:ascending,Campo:order,Tipo:ascending"
+                target="_blank"
+                rel="noopener"
+              >
+                Criar Índice
+              </Button>
+            </Box>
+            
+            <Divider sx={{ my: 2 }} />
+            
+            <Typography variant="body2" color="text.secondary">
+              <strong>Instrução para criar o índice:</strong>
+            </Typography>
+            <ol>
+              <li>Clique no botão "Criar Índice" para o índice que deseja adicionar</li>
+              <li>O console do Firebase será aberto com os campos já configurados</li>
+              <li>Verifique se os campos e a direção (ascending/descending) estão corretos</li>
+              <li>Clique em "Criar índice" no console do Firebase</li>
+              <li>A criação do índice levará alguns minutos para ser concluída</li>
+            </ol>
+            
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Se você receber um erro informando que um índice é necessário, o Firebase normalmente fornecerá um link direto para criar esse índice específico. Você pode usar esse link para criar o índice necessário imediatamente.
+            </Alert>
+          </Paper>
         </Box>
 
         <ConfigDialog />
