@@ -138,27 +138,39 @@ const QualityDashboard = ({ projectId }) => {
         setLoading(true);
         setError(null);
         
+        if (!projectId) {
+          throw new Error("ID do projeto não fornecido");
+        }
+        
         // Carregar dados do projeto
         const projectResponse = await projectService.getProjectById(projectId);
         if (projectResponse.error) {
           throw new Error(projectResponse.error);
         }
-        setProject(projectResponse.data || projectResponse);
+        
+        const projectData = projectResponse.data || projectResponse;
+        setProject(projectData);
         
         // Carregar relatório de qualidade
-        const reportResponse = await reportService.generateQualityReport(projectId, { preview: true });
-        if (reportResponse.error) {
-          console.warn("Erro ao gerar relatório de qualidade:", reportResponse.error);
-        } else {
-          setQualityData(reportResponse.data);
+        try {
+          const reportResponse = await reportService.generateQualityReport(projectId, { preview: true });
+          if (!reportResponse.error) {
+            setQualityData(reportResponse.data);
+          }
+        } catch (reportError) {
+          console.warn("Erro ao gerar relatório de qualidade:", reportError);
+          // Não interrompe o fluxo, apenas loga o erro
         }
         
         // Carregar dados de cobertura de requisitos
-        const coverageResponse = await traceabilityService.getRequirementsCoverage(projectId);
-        if (coverageResponse.error) {
-          console.warn("Erro ao obter dados de cobertura:", coverageResponse.error);
-        } else {
-          setRequirementsCoverage(coverageResponse.data);
+        try {
+          const coverageResponse = await traceabilityService.getRequirementsCoverage(projectId);
+          if (!coverageResponse.error) {
+            setRequirementsCoverage(coverageResponse.data);
+          }
+        } catch (coverageError) {
+          console.warn("Erro ao obter dados de cobertura:", coverageError);
+          // Não interrompe o fluxo, apenas loga o erro
         }
       } catch (err) {
         console.error("Erro ao carregar dados de qualidade:", err);
@@ -170,6 +182,9 @@ const QualityDashboard = ({ projectId }) => {
     
     if (projectId) {
       loadQualityData();
+    } else {
+      setLoading(false);
+      setError("ID do projeto não fornecido");
     }
   }, [projectId]);
   
@@ -238,9 +253,9 @@ const QualityDashboard = ({ projectId }) => {
   }
   
   return (
-    <Box>
+    <Box sx={{ p: 2, maxWidth: '100%', overflow: 'hidden' }}>
       {/* Cabeçalho */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h5" component="h1">
           Dashboard de Qualidade
         </Typography>
@@ -266,12 +281,12 @@ const QualityDashboard = ({ projectId }) => {
       
       {refreshing && <LinearProgress sx={{ mb: 2 }} />}
       
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {/* Pontuação Geral de Qualidade */}
         {qualityData?.metrics?.overallQualityScore !== undefined && (
           <Grid item xs={12} md={4}>
             <Card sx={{ height: '100%' }}>
-              <CardContent sx={{ textAlign: 'center', py: 3 }}>
+              <CardContent sx={{ textAlign: 'center', py: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   Pontuação de Qualidade
                 </Typography>
@@ -289,12 +304,12 @@ const QualityDashboard = ({ projectId }) => {
         {/* Métricas por Área */}
         <Grid item xs={12} md={8}>
           <Card sx={{ height: '100%' }}>
-            <CardContent>
+            <CardContent sx={{ p: 2 }}>
               <Typography variant="h6" gutterBottom>
                 Métricas por Área
               </Typography>
               
-              <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid container spacing={2} sx={{ mt: 0 }}>
                 {/* Requisitos */}
                 <Grid item xs={12} sm={4}>
                   <Box sx={{ textAlign: 'center', mb: 1 }}>

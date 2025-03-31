@@ -25,7 +25,8 @@ import {
   Alert,
   Chip,
   Paper,
-  CircularProgress
+  CircularProgress,
+  Grid
 } from '@mui/material';
 import {
   Brightness4 as DarkModeIcon,
@@ -751,6 +752,140 @@ const Settings = () => {
               Se você receber um erro informando que um índice é necessário, o Firebase normalmente fornecerá um link direto para criar esse índice específico. Você pode usar esse link para criar o índice necessário imediatamente.
             </Alert>
           </Paper>
+        </Box>
+
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Índices do Firebase
+          </Typography>
+          <Typography variant="body2" color="text.secondary" paragraph>
+            Para o funcionamento correto do sistema, é necessário criar os seguintes índices no Firebase.
+            Clique nos botões abaixo para criar cada índice diretamente no console do Firebase.
+          </Typography>
+
+          <Grid container spacing={2} sx={{ mt: 2 }}>
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Índice para Configurações Globais
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Coleção: <code>configurations</code><br />
+                  Campos: <code>type</code> (asc), <code>isGlobal</code> (asc), <code>order</code> (asc)
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  fullWidth
+                  href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClNwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2NvbmZpZ3VyYXRpb25zL2luZGV4ZXMvXxAAGgwIAhIIdHlwZRAAGg0IAxIJaXNHbG9iYWwQABoMCAMSBm9yZGVyEAAaDAoCEgZfX25hbWUQAQ"
+                  target="_blank"
+                  sx={{ mt: 1 }}
+                >
+                  Criar Índice
+                </Button>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Índice para Configurações de Projeto
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Coleção: <code>configurations</code><br />
+                  Campos: <code>type</code> (asc), <code>projectId</code> (asc), <code>order</code> (asc)
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  fullWidth
+                  href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClRwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2NvbmZpZ3VyYXRpb25zL2luZGV4ZXMvXxAAGgwIAhIIdHlwZRAAGg4IAxIKcHJvamVjdElkEAAaDAIDEgZvcmRlchAAGgwKAhIGX19uYW1lEAE"
+                  target="_blank"
+                  sx={{ mt: 1 }}
+                >
+                  Criar Índice
+                </Button>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Índice para Requisitos
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Coleção: <code>requirements</code><br />
+                  Campos: <code>projectId</code> (asc), <code>createdAt</code> (desc)
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  fullWidth
+                  href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClRwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL3JlcXVpcmVtZW50cy9pbmRleGVzL18QABoOCAISCnByb2plY3RJZBAAGg4IAxIJY3JlYXRlZEF0EAEaDAoCEgZfX25hbWUQAQ"
+                  target="_blank"
+                  sx={{ mt: 1 }}
+                >
+                  Criar Índice
+                </Button>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Índice para Projetos por Membro
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Coleção: <code>projects</code><br />
+                  Campos: <code>memberIds</code> (array), <code>createdAt</code> (desc)
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  fullWidth
+                  href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClBwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL3Byb2plY3RzL2luZGV4ZXMvXxAAGg8IAhABEgltZW1iZXJJZHMaDAIDEghjcmVhdGVkQXQQABoMCgISBl9fbmFtZRAB"
+                  target="_blank"
+                  sx={{ mt: 1 }}
+                >
+                  Criar Índice
+                </Button>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Índice para Relatórios
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Coleção: <code>reports</code><br />
+                  Campos: <code>projectId</code> (asc), <code>generatedAt</code> (desc)
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  fullWidth
+                  href="https://console.firebase.google.com/u/0/project/_/firestore/indexes?create_composite=ClBwcm9qZWN0cy9oZWxsZm9yZ2UtMWM5ZTgvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL3JlcG9ydHMvaW5kZXhlcy9fEAAaDggCEgpwcm9qZWN0SWQQABoOCAMSCmdlbmVyYXRlZEF0EAEaDAoCEgZfX25hbWUQAQ"
+                  target="_blank"
+                  sx={{ mt: 1 }}
+                >
+                  Criar Índice
+                </Button>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          <Box sx={{ mt: 3, backgroundColor: 'info.light', p: 2, borderRadius: 1 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Instruções para criação manual de índices
+            </Typography>
+            <Typography variant="body2">
+              1. Ao clicar no botão, você será redirecionado para o console do Firebase<br />
+              2. Faça login com sua conta Google que tem acesso ao projeto<br />
+              3. Confirme a criação do índice clicando em "Criar índice"<br />
+              4. Aguarde alguns minutos para que o índice seja criado e fique disponível
+            </Typography>
+          </Box>
         </Box>
 
         <ConfigDialog />
