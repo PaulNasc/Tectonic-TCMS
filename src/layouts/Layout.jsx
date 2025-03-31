@@ -261,7 +261,6 @@ const Layout = ({ toggleTheme }) => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Projetos', icon: <ProjectsIcon />, path: '/projects' },
     { text: 'Relatórios', icon: <ReportsIcon />, path: '/reports' },
-    { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
     ...(user?.role === 'admin' || user?.email === 'admin@hybex' ? [
       { text: 'Gerenciar', icon: <AdminPanelSettingsIcon />, path: '/admin' }
     ] : [])
@@ -298,11 +297,6 @@ const Layout = ({ toggleTheme }) => {
             <LogoSvg />
           </Box>
           <Box sx={{ flexGrow: 0 }}>
-            <Tooltip title="Alternar tema">
-              <IconButton onClick={toggleTheme} color="inherit">
-                {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-              </IconButton>
-            </Tooltip>
             <Tooltip title="Configurações da conta">
               <IconButton
                 size="large"
@@ -337,6 +331,12 @@ const Layout = ({ toggleTheme }) => {
                   <PersonIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Perfil</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => { handleClose(); navigate('/settings'); }}>
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Configurações</ListItemText>
               </MenuItem>
               {(user?.role === 'admin' || user?.email === 'admin@hybex') && (
                 <MenuItem onClick={() => { handleClose(); navigate('/admin'); }}>

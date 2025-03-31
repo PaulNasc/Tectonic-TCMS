@@ -478,558 +478,461 @@ const AdminPage = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Administração do Sistema
-      </Typography>
-      
-      {message && (
-        <Alert severity={messageType} sx={{ mb: 3 }}>
-          {message}
-        </Alert>
-      )}
-      
-      <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 3 }}>
-        <Tab label="Gerenciamento de Usuários" />
-        <Tab label="Ferramentas do Sistema" />
-      </Tabs>
-      
-      {activeTab === 0 && (
-        <Box>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6">Usuários</Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenUserDialog()}
-            >
-              Novo Usuário
-            </Button>
-          </Box>
-          
-          <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-            <TableContainer sx={{ maxHeight: 440 }}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Nome</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Função</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Último Acesso</TableCell>
-                    <TableCell align="right">Ações</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loadingUsers ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        <CircularProgress size={24} />
-                      </TableCell>
-                    </TableRow>
-                  ) : users.length > 0 ? (
-                    users.map((user) => (
-                      <TableRow
-                        key={user.id}
-                        sx={{
-                          '&:last-child td, &:last-child th': { border: 0 },
-                          backgroundColor: !user.isActive ? 'rgba(0, 0, 0, 0.04)' : 'inherit'
-                        }}
-                      >
-                        <TableCell>{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={getRoleLabel(user.role)}
-                            color={getRoleColor(user.role)}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={user.isActive ? 'Ativo' : 'Inativo'}
-                            color={user.isActive ? 'success' : 'default'}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {user.lastLogin 
-                            ? new Date(user.lastLogin).toLocaleString() 
-                            : 'Nunca acessou'}
-                        </TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            color="primary"
-                            onClick={() => handleOpenUserDialog(user)}
-                            size="small"
-                            title="Editar usuário"
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton
-                            color={user.isActive ? 'error' : 'success'}
-                            onClick={() => handleToggleUserStatus(user.id)}
-                            size="small"
-                            title={user.isActive ? 'Desativar usuário' : 'Ativar usuário'}
-                          >
-                            {user.isActive ? <BlockIcon /> : <CheckIcon />}
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        Nenhum usuário encontrado
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-          
-          <Dialog open={openUserDialog} onClose={handleCloseUserDialog} maxWidth="sm" fullWidth>
-            <DialogTitle>
-              {selectedUser ? 'Editar Usuário' : 'Novo Usuário'}
-            </DialogTitle>
-            <DialogContent>
-              <Box component="form" sx={{ mt: 2 }}>
-                <TextField
-                  name="name"
-                  label="Nome"
-                  fullWidth
-                  required
-                  value={userFormData.name}
-                  onChange={handleUserFormChange}
-                  margin="normal"
-                />
-                
-                <TextField
-                  name="email"
-                  label="Email"
-                  type="email"
-                  fullWidth
-                  required
-                  value={userFormData.email}
-                  onChange={handleUserFormChange}
-                  margin="normal"
-                  disabled={!!selectedUser} // Não permitir alterar email de usuário existente
-                />
-                
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Função</InputLabel>
-                  <Select
-                    name="role"
-                    value={userFormData.role}
-                    onChange={handleUserFormChange}
-                    label="Função"
-                  >
-                    <MenuItem value={USER_ROLES.ADMIN}>Administrador</MenuItem>
-                    <MenuItem value={USER_ROLES.MANAGER}>Gerente</MenuItem>
-                    <MenuItem value={USER_ROLES.USER}>Usuário</MenuItem>
-                  </Select>
-                </FormControl>
-                
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    name="isActive"
-                    value={userFormData.isActive}
-                    onChange={handleUserFormChange}
-                    label="Status"
-                  >
-                    <MenuItem value={true}>Ativo</MenuItem>
-                    <MenuItem value={false}>Inativo</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseUserDialog}>Cancelar</Button>
-              <Button 
-                onClick={handleSaveUser} 
-                variant="contained" 
-                disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} /> : null}
-              >
-                Salvar
-              </Button>
-            </DialogActions>
-          </Dialog>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: 0, 
+          overflow: 'hidden',
+          borderRadius: 2,
+          boxShadow: theme => `0 6px 16px 0 ${theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.1)'}`
+        }}
+      >
+        <Box sx={{ 
+          p: 3, 
+          background: theme => 
+            theme.palette.mode === 'dark' 
+              ? 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)' 
+              : 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)',
+          borderBottom: '1px solid',
+          borderColor: 'divider'
+        }}>
+          <Typography 
+            variant="h4" 
+            gutterBottom
+            sx={{ 
+              fontWeight: 700,
+              color: theme => theme.palette.mode === 'dark' ? '#fff' : '#1E40AF',
+            }}
+          >
+            Painel Administrativo
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Gerencie usuários, solicitações de acesso e configurações do sistema
+          </Typography>
         </Box>
-      )}
-      
-      {activeTab === 1 && (
-        <Box>
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Migração de Dados
-            </Typography>
-            
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={handleMigrateMemberIds}
-              disabled={loading}
-              sx={{ mb: 2 }}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Migrar memberIds para Projetos'}
-            </Button>
-            
-            <Typography variant="body2" color="text.secondary">
-              Esta operação adiciona o campo memberIds aos projetos existentes, necessário para consultas eficientes.
-            </Typography>
-          </Paper>
-          
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Criação de Índices
-            </Typography>
-            
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Clique nos links abaixo para criar os índices necessários no Firestore:
-            </Typography>
-            
-            <List>
-              {indexLinks.map((link, index) => (
-                <React.Fragment key={index}>
-                  {index > 0 && <Divider />}
-                  <ListItem>
-                    <ListItemText 
-                      primary={link.name}
-                      secondary={
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
-                          color="primary"
-                          href={link.url}
-                          target="_blank"
-                          sx={{ mt: 1 }}
-                        >
-                          Criar Índice
-                        </Button>
-                      }
-                    />
-                  </ListItem>
-                </React.Fragment>
-              ))}
-            </List>
-          </Paper>
-          
-          <Paper sx={{ p: 3, mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Segurança do Sistema
-            </Typography>
-            
-            <Box display="flex" gap={2} flexWrap="wrap">
-              <Button
-                variant="outlined"
-                startIcon={<SecurityIcon />}
-                onClick={() => setInfoMessage('Verificação de segurança iniciada')}
-              >
-                Verificar Configurações de Segurança
-              </Button>
-              
-              <Button
-                variant="outlined"
-                color="warning"
-                onClick={() => setInfoMessage('Auditoria de logs será implementada em breve')}
-              >
-                Auditoria de Logs
-              </Button>
-              
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={() => setInfoMessage('Limpeza de cache realizada')}
-              >
-                Limpar Cache do Sistema
-              </Button>
-            </Box>
-          </Paper>
-          
-          <Paper sx={{ p: 3, mt: 3, bgcolor: 'error.light' }}>
-            <Box display="flex" alignItems="center" justifyContent="space-between">
-              <Box>
-                <Typography variant="h6" gutterBottom color="error.contrastText">
-                  Zona de Perigo
-                </Typography>
-                <Typography variant="body2" color="error.contrastText">
-                  As ações abaixo são irreversíveis e podem causar perda permanente de dados.
-                </Typography>
-              </Box>
+
+        {message && (
+          <Alert 
+            severity={messageType} 
+            sx={{ 
+              mx: 3, 
+              mt: 3, 
+              borderRadius: 1,
+              boxShadow: 1
+            }}
+            onClose={() => setMessage(null)}
+          >
+            {message}
+          </Alert>
+        )}
+
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          sx={{
+            px: 3,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              py: 2,
+              fontWeight: 600
+            }
+          }}
+        >
+          <Tab label="Usuários" />
+          <Tab label="Solicitações de Acesso" />
+          <Tab label="Configurações do Sistema" />
+        </Tabs>
+
+        {/* Tab 1: Gerenciamento de Usuários */}
+        {activeTab === 0 && (
+          <Box sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Gerenciamento de Usuários
+              </Typography>
               <Button
                 variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={() => handleOpenUserDialog()}
+              >
+                Novo Usuário
+              </Button>
+            </Box>
+
+            {loadingUsers ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
+                <Table>
+                  <TableHead sx={{ bgcolor: theme => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : 'rgba(241, 245, 249, 0.8)' }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Nome</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Função</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Último Acesso</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }} align="center">Ações</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {users.length > 0 ? (
+                      users.map((user) => (
+                        <TableRow 
+                          key={user.id}
+                          hover
+                          sx={{ 
+                            '&:last-child td, &:last-child th': { border: 0 },
+                            opacity: user.isActive ? 1 : 0.6
+                          }}
+                        >
+                          <TableCell>{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={getRoleLabel(user.role)} 
+                              color={getRoleColor(user.role)}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={user.isActive ? 'Ativo' : 'Inativo'} 
+                              color={user.isActive ? 'success' : 'default'}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Nunca'}
+                          </TableCell>
+                          <TableCell align="center">
+                            <Tooltip title="Editar">
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleOpenUserDialog(user)}
+                                color="primary"
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={user.isActive ? 'Desativar' : 'Ativar'}>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleToggleUserStatus(user.id)}
+                                color={user.isActive ? 'warning' : 'success'}
+                              >
+                                {user.isActive ? <BlockIcon fontSize="small" /> : <CheckIcon fontSize="small" />}
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Nenhum usuário encontrado
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                Manutenção de Dados
+              </Typography>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<RefreshIcon />}
+                onClick={handleMigrateMemberIds}
+                disabled={loading}
+                sx={{ mr: 2 }}
+              >
+                Migrar memberIds
+              </Button>
+              {loading && <CircularProgress size={24} sx={{ ml: 2 }} />}
+            </Box>
+          </Box>
+        )}
+
+        {/* Tab 2: Solicitações de Acesso */}
+        {activeTab === 1 && (
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+              Solicitações de Acesso Pendentes
+            </Typography>
+
+            {loadingRequests ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : requestError ? (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {requestError}
+              </Alert>
+            ) : accessRequests.length === 0 ? (
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  textAlign: 'center', 
+                  borderRadius: 2,
+                  border: '1px dashed',
+                  borderColor: 'divider'
+                }}
+              >
+                <Typography variant="body1" color="text.secondary">
+                  Não há solicitações de acesso pendentes
+                </Typography>
+              </Paper>
+            ) : (
+              <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
+                <Table>
+                  <TableHead sx={{ bgcolor: theme => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : 'rgba(241, 245, 249, 0.8)' }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Nome</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Data da Solicitação</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }} align="center">Ações</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {accessRequests.map((request) => (
+                      <TableRow 
+                        key={request.id}
+                        hover
+                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                      >
+                        <TableCell>{request.name}</TableCell>
+                        <TableCell>{request.email}</TableCell>
+                        <TableCell>
+                          {request.createdAt ? new Date(request.createdAt).toLocaleString() : '—'}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Button
+                            variant="contained"
+                            size="small"
+                            color="success"
+                            onClick={() => handleApproveRequest(request.id)}
+                            sx={{ mr: 1 }}
+                          >
+                            Aprovar
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="error"
+                            onClick={() => handleOpenRejectDialog(request)}
+                          >
+                            Rejeitar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Box>
+        )}
+
+        {/* Tab 3: Configurações do Sistema */}
+        {activeTab === 2 && (
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+              Configurações Avançadas
+            </Typography>
+
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 3, 
+                mb: 3, 
+                border: '1px solid',
+                borderColor: theme => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                borderRadius: 2,
+                bgcolor: theme => theme.palette.mode === 'dark' ? 'rgba(244,63,94,0.1)' : 'rgba(254,226,226,1)'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <SecurityIcon color="error" sx={{ mr: 1 }} />
+                <Typography variant="h6" color="error.main" sx={{ fontWeight: 600 }}>
+                  Zona de Perigo
+                </Typography>
+              </Box>
+              
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                As ações abaixo são irreversíveis e podem afetar permanentemente os dados do sistema. 
+                Proceda com extrema cautela.
+              </Typography>
+              
+              <Button 
+                variant="outlined" 
                 color="error"
                 startIcon={<DeleteIcon />}
                 onClick={handleOpenResetDialog}
+                sx={{ fontWeight: 'bold' }}
               >
-                Resetar Todos os Dados
+                Resetar Dados do Sistema
               </Button>
-            </Box>
-          </Paper>
-        </Box>
-      )}
-      
-      {/* Dialog de confirmação para resetar todos os dados */}
-      <Dialog
-        open={openResetDialog}
-        onClose={handleCloseResetDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ bgcolor: 'error.main', color: 'error.contrastText' }}>
-          ATENÇÃO: Ação Irreversível
-        </DialogTitle>
-        <DialogContent>
-          <Box mt={2} mb={2}>
-            <Typography variant="body1" paragraph color="error" fontWeight="bold">
-              Você está prestes a apagar TODOS os dados do sistema. Esta ação não pode ser desfeita!
-            </Typography>
-            
-            <Typography variant="body2" paragraph>
-              Todos os seguintes dados serão permanentemente excluídos:
-            </Typography>
-            
-            <List dense>
-              <ListItem>
-                <ListItemIcon><DeleteIcon color="error" /></ListItemIcon>
-                <ListItemText primary="Todos os projetos" />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon><DeleteIcon color="error" /></ListItemIcon>
-                <ListItemText primary="Todas as suítes de teste" />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon><DeleteIcon color="error" /></ListItemIcon>
-                <ListItemText primary="Todos os casos de teste" />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon><DeleteIcon color="error" /></ListItemIcon>
-                <ListItemText primary="Todas as execuções de teste" />
-              </ListItem>
-            </List>
-            
-            <Divider sx={{ my: 2 }} />
-            
-            <Typography variant="body2" paragraph fontWeight="bold">
-              Para confirmar que você entende as consequências, digite exatamente o texto a seguir:
-            </Typography>
-            
-            <Box 
-              sx={{ 
-                p: 2, 
-                bgcolor: 'grey.100', 
-                borderRadius: 1,
-                fontFamily: 'monospace',
-                fontWeight: 'bold',
-                mb: 2
-              }}
-            >
-              Eu confirmo que desejo zerar todos os dados do sistema
-            </Box>
-            
-            <TextField
-              fullWidth
-              label="Digite o texto de confirmação"
-              value={resetConfirmation}
-              onChange={handleResetConfirmationChange}
-              error={resetConfirmation !== '' && resetConfirmation !== 'Eu confirmo que desejo zerar todos os dados do sistema'}
-              helperText={resetConfirmation !== '' && resetConfirmation !== 'Eu confirmo que desejo zerar todos os dados do sistema' ? 'O texto não corresponde exatamente' : ''}
-              margin="normal"
-              variant="outlined"
-            />
-            
-            <TextField
-              fullWidth
-              label="Senha de Administrador"
-              type="password"
-              value={adminPassword}
-              onChange={handleAdminPasswordChange}
-              margin="normal"
-              variant="outlined"
-            />
-            
-            {message && (
-              <Alert severity={messageType} sx={{ mt: 2 }}>
-                {message}
-              </Alert>
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button 
-            onClick={handleCloseResetDialog} 
-            variant="outlined"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleResetAllData}
-            variant="contained"
-            color="error"
-            disabled={
-              resetConfirmation !== 'Eu confirmo que desejo zerar todos os dados do sistema' ||
-              !adminPassword ||
-              resetInProgress
-            }
-            startIcon={resetInProgress ? <CircularProgress size={20} /> : <DeleteIcon />}
-          >
-            {resetInProgress ? 'Processando...' : 'Resetar Todos os Dados'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      
-      {/* Nova seção para solicitações de acesso */}
-      <Paper sx={{ p: 3, mt: 4 }}>
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" component="h2">
-            Solicitações de Acesso Pendentes
-          </Typography>
-          <Button 
-            variant="outlined" 
-            startIcon={<RefreshIcon />} 
-            onClick={loadAccessRequests}
-            disabled={loadingRequests}
-          >
-            Atualizar
-          </Button>
-        </Box>
-        
-        {requestError && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {requestError}
-          </Alert>
-        )}
-        
-        {loadingRequests ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : accessRequests.length > 0 ? (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nome</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Perfil Solicitado</TableCell>
-                  <TableCell>Data</TableCell>
-                  <TableCell>Mensagem</TableCell>
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {accessRequests.map((request) => (
-                  <TableRow key={request.id}>
-                    <TableCell>{request.name}</TableCell>
-                    <TableCell>{request.email}</TableCell>
-                    <TableCell>
-                      {request.requestedRole === 'admin' ? 'Administrador' : 
-                       request.requestedRole === 'qa_lead' ? 'Líder QA' : 
-                       request.requestedRole === 'qa_analyst' ? 'Analista QA' : 'Usuário'}
-                    </TableCell>
-                    <TableCell>
-                      {request.createdAt instanceof Date 
-                        ? request.createdAt.toLocaleDateString('pt-BR') 
-                        : new Date(request.createdAt).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title={request.message || 'Sem mensagem'}>
-                        <span>{(request.message || '').substring(0, 20)}{(request.message || '').length > 20 ? '...' : ''}</span>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button
-                        variant="contained"
-                        color="success"
-                        size="small"
-                        onClick={() => handleApproveRequest(request.id)}
-                        disabled={loadingRequests}
-                        sx={{ mr: 1 }}
-                      >
-                        Aprovar
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        size="small"
-                        onClick={() => handleOpenRejectDialog(request)}
-                        disabled={loadingRequests}
-                      >
-                        Rejeitar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography color="text.secondary">
-              Não há solicitações de acesso pendentes.
-            </Typography>
+            </Paper>
           </Box>
         )}
       </Paper>
-      
-      {/* Diálogo de rejeição */}
-      <Dialog
-        open={showRejectionDialog}
-        onClose={() => !loadingRequests && setShowRejectionDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Rejeitar Solicitação</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            Você está rejeitando a solicitação de acesso de <strong>{selectedRequest?.name}</strong> ({selectedRequest?.email}).
-            Você pode fornecer um motivo para a rejeição (opcional).
-          </DialogContentText>
-          <TextField
-            label="Motivo da rejeição"
-            fullWidth
-            multiline
-            rows={3}
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-            variant="outlined"
-            margin="normal"
-          />
+
+      {/* Dialog de usuário */}
+      <Dialog open={openUserDialog} onClose={handleCloseUserDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {selectedUser ? `Editar Usuário: ${selectedUser.name}` : 'Novo Usuário'}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ pt: 1 }}>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Nome"
+              name="name"
+              value={userFormData.name}
+              onChange={handleUserFormChange}
+              required
+            />
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Email"
+              name="email"
+              type="email"
+              value={userFormData.email}
+              onChange={handleUserFormChange}
+              required
+              disabled={Boolean(selectedUser)}
+            />
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel>Função</InputLabel>
+              <Select
+                name="role"
+                value={userFormData.role}
+                onChange={handleUserFormChange}
+                label="Função"
+              >
+                <MenuItem value={USER_ROLES.ADMIN}>Administrador</MenuItem>
+                <MenuItem value={USER_ROLES.MANAGER}>Gerente</MenuItem>
+                <MenuItem value={USER_ROLES.USER}>Usuário</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setShowRejectionDialog(false)}
-            disabled={loadingRequests}
+          <Button onClick={handleCloseUserDialog}>Cancelar</Button>
+          <Button 
+            onClick={handleSaveUser} 
+            variant="contained" 
+            color="primary"
+            disabled={loading}
           >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleRejectRequest}
-            color="error"
-            variant="contained"
-            disabled={loadingRequests}
-          >
-            {loadingRequests ? <CircularProgress size={24} /> : 'Rejeitar'}
+            {loading ? <CircularProgress size={24} /> : 'Salvar'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Adicionar Snackbar no final */}
+      {/* Dialog de reset de dados */}
+      <Dialog open={openResetDialog} onClose={handleCloseResetDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ bgcolor: 'error.main', color: 'white' }}>
+          Resetar Todos os Dados
+        </DialogTitle>
+        <DialogContent dividers>
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" fontWeight="bold">
+              ATENÇÃO: Esta ação é permanente e irreversível!
+            </Typography>
+            <Typography variant="body2">
+              Todos os dados serão excluídos, incluindo projetos, testes, usuários e configurações.
+            </Typography>
+          </Alert>
+          
+          <Typography variant="body1" paragraph>
+            Para confirmar, digite "RESETAR SISTEMA" no campo abaixo:
+          </Typography>
+          
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Confirmação"
+            value={resetConfirmation}
+            onChange={handleResetConfirmationChange}
+            error={resetConfirmation.length > 0 && resetConfirmation !== 'RESETAR SISTEMA'}
+            helperText={resetConfirmation.length > 0 && resetConfirmation !== 'RESETAR SISTEMA' ? 'Digite exatamente "RESETAR SISTEMA"' : ''}
+          />
+          
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Senha de Administrador"
+            type="password"
+            value={adminPassword}
+            onChange={handleAdminPasswordChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseResetDialog}>Cancelar</Button>
+          <Button 
+            onClick={handleResetAllData} 
+            variant="contained" 
+            color="error"
+            disabled={resetConfirmation !== 'RESETAR SISTEMA' || !adminPassword || resetInProgress}
+          >
+            {resetInProgress ? <CircularProgress size={24} /> : 'Resetar Sistema'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog de rejeição de solicitação */}
+      <Dialog open={showRejectionDialog} onClose={() => setShowRejectionDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Rejeitar Solicitação de Acesso</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body1" paragraph>
+            Você está rejeitando o acesso para: <strong>{selectedRequest?.email}</strong>
+          </Typography>
+          <TextField
+            label="Motivo da Rejeição"
+            multiline
+            rows={4}
+            fullWidth
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            margin="normal"
+            placeholder="Explique o motivo da rejeição (opcional)"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowRejectionDialog(false)}>Cancelar</Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            onClick={handleRejectRequest}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Rejeitar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar para notificações */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

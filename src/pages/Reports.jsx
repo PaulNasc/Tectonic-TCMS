@@ -90,7 +90,7 @@ const Reports = () => {
   useEffect(() => {
     const loadProjectAndReports = async () => {
       if (!projectId) {
-        setError('ID do projeto não fornecido');
+        // Se não houver ID do projeto, não mostrar erro, apenas exibir a lista de relatórios
         setLoading(false);
         return;
       }
@@ -246,10 +246,35 @@ const Reports = () => {
 
   // Estado de erro
   if (error && !selectedReport && reports.length === 0) {
-  return (
+    return (
       <Alert severity="error" sx={{ m: 3 }}>
         {error}
       </Alert>
+    );
+  }
+
+  // Se não houver ID de projeto, exibir mensagem informativa e listagem geral de relatórios
+  if (!projectId) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Relatórios e Análises
+        </Typography>
+        <Typography variant="body1" paragraph>
+          Selecione um projeto específico para visualizar ou gerar relatórios detalhados.
+        </Typography>
+        <Button 
+          variant="contained" 
+          color="primary"
+          onClick={() => navigate('/projects')}
+          sx={{ mb: 3 }}
+        >
+          Ver Projetos
+        </Button>
+        
+        {/* Listagem de relatórios globais, se existir alguma funcionalidade desse tipo */}
+        {/* Pode ser implementado no futuro */}
+      </Box>
     );
   }
 
